@@ -1,0 +1,303 @@
+{
+  "people": [
+    {
+      "id": "p-abu-hamad",
+      "displayName": "Abu Hamad",
+      "username": "abu-hamad",
+      "aliases": [
+        "abu hamad"
+      ],
+      "managerId": null,
+      "group": "leadership",
+      "orgRole": "top"
+    },
+    {
+      "id": "p-abdulrahman",
+      "displayName": "Abdulrahman",
+      "username": "abdulrahman",
+      "aliases": [
+        "abdulrahman"
+      ],
+      "managerId": null,
+      "group": "leadership",
+      "orgRole": "top"
+    },
+    {
+      "id": "p-al-tayeb",
+      "displayName": "Al-Tayeb",
+      "username": "al-tayeb",
+      "aliases": [
+        "al-tayeb"
+      ],
+      "managerId": null,
+      "group": "leadership",
+      "orgRole": "top"
+    },
+    {
+      "id": "p-hossam-hassaneen",
+      "displayName": "Hossam Hassaneen",
+      "username": "hossam.hassaneen",
+      "aliases": [
+        "hossam hassaneen"
+      ],
+      "managerId": null,
+      "group": "outsource",
+      "orgRole": "manager"
+    },
+    {
+      "id": "p-bashar-masoad",
+      "displayName": "Bashar Masoad",
+      "username": "bashar.masoad",
+      "aliases": [
+        "bashar masoad",
+        "i c t"
+      ],
+      "managerId": null,
+      "group": "ict",
+      "orgRole": "ict"
+    },
+    {
+      "id": "p-ahmed-sh",
+      "displayName": "Ahmed SH",
+      "username": "ahmed-sh",
+      "aliases": [
+        "ahmed sh"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-bahaa-hamid",
+      "displayName": "Bahaa Hamid",
+      "username": "bahaa-hamid",
+      "aliases": [
+        "bahaa hamid"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-osama-magdy",
+      "displayName": "Osama Magdy",
+      "username": "osama-magdy",
+      "aliases": [
+        "osama magdy"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-ehab-hassan",
+      "displayName": "Ehab Hassan",
+      "username": "ehab-hassan",
+      "aliases": [
+        "ehab hassan",
+        "ehab hassan 2"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-jayzon",
+      "displayName": "Jayzon",
+      "username": "jayzon",
+      "aliases": [
+        "jayzon"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-mohamed-hasab-el-rasoul",
+      "displayName": "Mohamed Hasab El Rasoul",
+      "username": "mohamed-hasab-el-rasoul",
+      "aliases": [
+        "mohamed hasab el rasoul"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-manhal-aldrwish",
+      "displayName": "Manhal Aldrwish",
+      "username": "manhal-aldrwish",
+      "aliases": [
+        "manhal aldrwish"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-salama-al-akhras",
+      "displayName": "Salama Al Akhras",
+      "username": "salama-al-akhras",
+      "aliases": [
+        "salama al akhras"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-mohamed-mostafa",
+      "displayName": "Mohamed Mostafa",
+      "username": "mohamed-mostafa",
+      "aliases": [
+        "mohamed mostafa"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-muhamad-alshaykh",
+      "displayName": "muhamad alshaykh",
+      "username": "muhamad-alshaykh",
+      "aliases": [
+        "muhamad alshaykh"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-mohammed-alamin",
+      "displayName": "Mohammed Alamin",
+      "username": "mohammed-alamin",
+      "aliases": [
+        "mohammed alamin"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-salem-salem",
+      "displayName": "Salem Salem",
+      "username": "salem-salem",
+      "aliases": [
+        "salem salem"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-aratek",
+      "displayName": "Aratek",
+      "username": "aratek",
+      "aliases": [
+        "aratek"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-feeri-logis",
+      "displayName": "Feeri Logis",
+      "username": "feeri-logis",
+      "aliases": [
+        "feeri logis"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-sparks",
+      "displayName": "sparks",
+      "username": "sparks",
+      "aliases": [
+        "sparks"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-out-source-95",
+      "displayName": "Out Source 95",
+      "username": "out-source-95",
+      "aliases": [
+        "out source 95"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-othman-ahmed",
+      "displayName": "Othman Ahmed",
+      "username": "othman-ahmed",
+      "aliases": [
+        "othman ahmed"
+      ],
+      "managerId": "p-hossam-hassaneen",
+      "group": "outsource",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-mahmoud-el-sheikh",
+      "displayName": "Mahmoud El-sheikh",
+      "username": "mahmoud-el-sheikh",
+      "aliases": [
+        "mahmoud el-sheikh"
+      ],
+      "managerId": null,
+      "group": "independent",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-khawlh-mazen",
+      "displayName": "Khawlh Mazen",
+      "username": "khawlh-mazen",
+      "aliases": [
+        "khawlh mazen"
+      ],
+      "managerId": null,
+      "group": "independent",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-mohamed-mahrous",
+      "displayName": "Mohamed Mahrous",
+      "username": "mohamed-mahrous",
+      "aliases": [
+        "mohamed mahrous"
+      ],
+      "managerId": null,
+      "group": "independent",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-khaled-alsayed",
+      "displayName": "khaled Alsayed",
+      "username": "khaled-alsayed",
+      "aliases": [
+        "khaled alsayed"
+      ],
+      "managerId": null,
+      "group": "independent",
+      "orgRole": "employee"
+    },
+    {
+      "id": "p-alaa-obeid",
+      "displayName": "Alaa Obeid",
+      "username": "alaa-obeid",
+      "aliases": [
+        "alaa obeid"
+      ],
+      "managerId": null,
+      "group": "independent",
+      "orgRole": "employee"
+    }
+  ]
+}

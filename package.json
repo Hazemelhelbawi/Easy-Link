@@ -1,0 +1,18 @@
+{
+  "name": "easylink-dashboard",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "install:all": "npm install --prefix front && npm install --prefix backend",
+    "dev": "concurrently -n backend,front -c blue,green \"npm run dev --prefix backend\" \"npm run dev --prefix front\"",
+    "build": "npm run build --prefix front",
+    "start": "npm start --prefix backend",
+    "test": "npm test --prefix backend",
+    "bootstrap:admin": "npm run bootstrap:admin --prefix backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

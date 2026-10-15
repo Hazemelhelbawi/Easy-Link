@@ -1,0 +1,25 @@
+{
+  "applicationName": "EasyLink",
+  "companyName": "EasyLink",
+  "reportingYear": 2026,
+  "currencyCode": "SAR",
+  "currencyLabel": {
+    "ar": "ر.س",
+    "en": "SAR"
+  },
+  "leaderboardShowRevenue": true,
+  "ictTypes": [
+    "bent",
+    "dia",
+    "dia - mw",
+    "dia - fiber",
+    "dia - relocation",
+    "sip trunk",
+    "ip-vpn",
+    "bnet-open access"
+  ],
+  "kamAliases": {
+    "ehab hassan 2": "ehab hassan"
+  },
+  "bootstrapCompleted": true
+}
