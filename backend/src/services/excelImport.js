@@ -117,6 +117,21 @@ function parseSheet(sheet, status, reportingYear) {
   const idxMonth = colIndex(normalized, 'month');
   const idxKamStatus = colIndex(normalized, 'kam status');
   const idxPending = colIndex(normalized, 'pending with ...', 'pending with');
+  const idxAuthorizedName = colIndex(
+    normalized,
+    'authorized name',
+    'authorised name',
+    'customer name',
+    'contact name',
+  );
+  const idxAuthorizedMobile = colIndex(
+    normalized,
+    'authorized mobile',
+    'authorised mobile',
+    'contact mobile',
+    'customer mobile',
+    'contact number',
+  );
 
   /** @type {import('./reportCache.js').OrderRow[]} */
   const rows = [];
@@ -143,6 +158,8 @@ function parseSheet(sheet, status, reportingYear) {
       kamName: String(kamRaw).trim(),
       kamStatus: String(cell(row, idxKamStatus)).trim(),
       companyName: String(cell(row, idxCompany)).trim(),
+      authorizedName: String(cell(row, idxAuthorizedName)).trim(),
+      authorizedMobile: msisdnToText(cell(row, idxAuthorizedMobile)),
       orderIdentifier: String(cell(row, idxOrders)).trim(),
       msisdn: msisdnToText(cell(row, idxMsisdn)),
       packageName: String(cell(row, idxPackage)).trim(),

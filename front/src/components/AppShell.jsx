@@ -3,10 +3,11 @@ import { LayoutDashboard, Trophy, Target, Users, ClipboardList, Settings, LogOut
 import { useApp } from '../context/AppContext.jsx';
 import { t } from '../i18n/index.js';
 import { api } from '../api/client.js';
+import ThemeLangToggle from './ThemeLangToggle.jsx';
 import '../styles/app.css';
 
 export default function AppShell() {
-  const { lang, setLang, theme, setTheme, user, role, metadata, refreshMe } = useApp();
+  const { lang, user, role, metadata, refreshMe } = useApp();
 
   async function logout() {
     await api('/auth/logout', { method: 'POST' });
@@ -53,21 +54,8 @@ export default function AppShell() {
             <strong>{user?.username}</strong>{' '}
             <span style={{ color: 'var(--text-muted)' }}>{t(lang, `roles.${role}`)}</span>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <select className="input" style={{ width: 110 }} value={lang} onChange={(e) => setLang(e.target.value)}>
-              <option value="ar">العربية</option>
-              <option value="en">English</option>
-            </select>
-            <select
-              className="input"
-              style={{ width: 120 }}
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-            >
-              <option value="system">System</option>
-              <option value="light">{t(lang, 'themeLight')}</option>
-              <option value="dark">{t(lang, 'themeDark')}</option>
-            </select>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <ThemeLangToggle />
             <button className="btn ghost" onClick={logout} type="button">
               <LogOut size={16} style={{ verticalAlign: 'middle' }} /> {t(lang, 'logout')}
             </button>

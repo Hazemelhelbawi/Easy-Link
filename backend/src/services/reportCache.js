@@ -17,6 +17,8 @@ import { atomicWriteBuffer } from '../utils/atomicWrite.js';
  * @property {string} kamName
  * @property {string} kamStatus
  * @property {string} companyName
+ * @property {string} authorizedName
+ * @property {string} authorizedMobile
  * @property {string} orderIdentifier
  * @property {string} msisdn
  * @property {string} packageName

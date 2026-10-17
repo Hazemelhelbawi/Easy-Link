@@ -22,6 +22,31 @@ export function aggregateOverview(appliedRows, allRows) {
   return { applied, underActivation, lost, appliedRevenue };
 }
 
+export function filterRowsByMonth(rows, month, reportingYear) {
+  if (!month || month === 'all') return rows;
+  const m = Number(month);
+  if (!Number.isFinite(m)) return rows;
+  return rows.filter((r) => r.month === m && r.reportingYear === reportingYear);
+}
+
+export function aggregateOverviewForMonth(allRows, month, reportingYear) {
+  const scoped = filterRowsByMonth(allRows, month, reportingYear);
+  const appliedRows = scoped.filter((r) => r.status === 'applied');
+  return aggregateOverview(appliedRows, scoped);
+}
+
+export function appliedStatusBreakdown(appliedRows, month, reportingYear) {
+  const scoped = filterRowsByMonth(appliedRows, month, reportingYear);
+  const map = new Map();
+  for (const row of scoped) {
+    const key = row.statusText || '—';
+    map.set(key, (map.get(key) || 0) + 1);
+  }
+  return [...map.entries()]
+    .map(([statusText, count]) => ({ statusText, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 export function monthlyAppliedMetrics(appliedRows, reportingYear) {
   /** @type {Map<number, { revenue: number, completed: number }>} */
   const map = new Map();

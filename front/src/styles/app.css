@@ -56,6 +56,129 @@
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.pref-toggles {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.toggle-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, var(--primary) 8%);
+}
+
+.toggle-icon {
+  color: var(--text-muted);
+  margin-inline: 4px;
+}
+
+.toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: calc(var(--radius-sm) - 2px);
+  padding: 6px 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn.icon-only {
+  padding: 6px 8px;
+}
+
+.toggle-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.filters-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 96%, var(--primary) 4%);
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.filter-field-grow {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filters-meta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.pagination-bar {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.chart-card {
+  height: 320px;
+}
+
+.status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.status-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.status-chip-label {
+  color: var(--text-muted);
 }
 
 .page {

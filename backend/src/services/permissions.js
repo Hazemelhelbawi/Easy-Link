@@ -86,6 +86,8 @@ export function matchSearch(row, q) {
   return (
     normalizeKey(row.companyName).includes(needle) ||
     normalizeKey(row.msisdn).includes(needle) ||
-    normalizeKey(row.orderIdentifier).includes(needle)
+    normalizeKey(row.orderIdentifier).includes(needle) ||
+    normalizeKey(row.authorizedName || '').includes(needle) ||
+    normalizeKey(row.authorizedMobile || '').includes(needle)
   );
 }

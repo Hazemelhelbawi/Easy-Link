@@ -5,16 +5,19 @@ import { loadConfig, loadPeople } from '../services/store.js';
 import {
   filterVisibleRows,
   canViewPersonMetrics,
-  matchSearch,
   leaderboardEligiblePeople,
 } from '../services/permissions.js';
+import { applyOrderQueryFilters, collectOrderFilterOptions } from '../services/orderFilters.js';
 import {
   aggregateOverview,
+  aggregateOverviewForMonth,
+  appliedStatusBreakdown,
   monthlyAppliedMetrics,
   getLatestReportingMonth,
   getAvailableMonths,
   monthComparison,
   pendingByStage,
+  filterRowsByMonth,
   personPerformance,
   buildLeaderboard,
   teamBreakdown,
@@ -50,23 +53,47 @@ router.get('/overview', async (req, res) => {
   const cache = getReportCache();
   const visible = filterVisibleRows(req.auth.user, req.auth.role, people, cache.rows);
   const applied = visible.filter((r) => r.status === 'applied');
-  const summary = aggregateOverview(applied, visible);
-  const monthMap = monthlyAppliedMetrics(applied, config.reportingYear);
+  const monthParam = req.query.month ? String(req.query.month) : 'all';
   const latest = getLatestReportingMonth(applied, config.reportingYear);
-  const cmp = monthComparison(monthMap, latest);
+  const selectedMonth =
+    monthParam === 'all'
+      ? latest
+      : Number.isFinite(Number(monthParam))
+        ? Number(monthParam)
+        : latest;
+  const summary =
+    selectedMonth != null
+      ? aggregateOverviewForMonth(visible, selectedMonth, config.reportingYear)
+      : aggregateOverview(applied, visible);
+  const monthMap = monthlyAppliedMetrics(applied, config.reportingYear);
+  const cmp = monthComparison(monthMap, selectedMonth);
+  const monthStatusBreakdown =
+    selectedMonth != null
+      ? appliedStatusBreakdown(applied, selectedMonth, config.reportingYear)
+      : [];
   const revenueSeries = getAvailableMonths(applied, config.reportingYear).map((m) => ({
     month: m,
     revenue: monthMap.get(m)?.revenue || 0,
     completed: monthMap.get(m)?.completed || 0,
   }));
-  const pending = pendingByStage(visible);
+  const pending = pendingByStage(
+    selectedMonth != null ? filterRowsByMonth(visible, selectedMonth, config.reportingYear) : visible,
+  );
   let teamPerformance = [];
   if (['admin', 'top', 'manager'].includes(req.auth.role) && req.auth.user.personId) {
-    teamPerformance = teamBreakdown(applied, people, req.auth.user.personId, config.reportingYear, latest);
+    teamPerformance = teamBreakdown(
+      applied,
+      people,
+      req.auth.user.personId,
+      config.reportingYear,
+      selectedMonth ?? latest,
+    );
   } else if (req.auth.role === 'admin' || req.auth.role === 'top') {
     teamPerformance = people
       .filter((p) => p.orgRole === 'manager')
-      .flatMap((m) => teamBreakdown(applied, people, m.id, config.reportingYear, latest));
+      .flatMap((m) =>
+        teamBreakdown(applied, people, m.id, config.reportingYear, selectedMonth ?? latest),
+      );
   }
 
   return res.json({
@@ -74,9 +101,11 @@ router.get('/overview', async (req, res) => {
     data: {
       summary,
       reportingYear: config.reportingYear,
+      selectedMonth,
       latestMonth: latest,
       comparison: cmp,
       revenueSeries,
+      monthStatusBreakdown,
       pendingByStage: pending,
       teamPerformance,
     },
@@ -159,15 +188,22 @@ router.get('/leaderboard', async (req, res) => {
   });
 });
 
+router.get('/orders/options', async (req, res) => {
+  const config = await loadConfig();
+  const people = await loadPeople();
+  const cache = getReportCache();
+  const visible = filterVisibleRows(req.auth.user, req.auth.role, people, cache.rows);
+  const status = req.query.status ? String(req.query.status) : null;
+  const month = req.query.month ? String(req.query.month) : 'all';
+  const options = collectOrderFilterOptions(visible, { status, month, reportingYear: config.reportingYear });
+  return res.json({ ok: true, data: options });
+});
+
 router.get('/orders', async (req, res) => {
+  const config = await loadConfig();
   const people = await loadPeople();
   const cache = getReportCache();
   let visible = filterVisibleRows(req.auth.user, req.auth.role, people, cache.rows);
-
-  const status = req.query.status ? String(req.query.status) : null;
-  if (status && ['applied', 'underActivation', 'lost'].includes(status)) {
-    visible = visible.filter((r) => r.status === status);
-  }
 
   const person = req.query.person ? String(req.query.person) : null;
   if (person) {
@@ -177,8 +213,7 @@ router.get('/orders', async (req, res) => {
     visible = visible.filter((r) => r.personId === person);
   }
 
-  const search = req.query.search ? String(req.query.search) : '';
-  if (search) visible = visible.filter((r) => matchSearch(r, search));
+  visible = applyOrderQueryFilters(visible, req.query, config.reportingYear);
 
   const page = Math.max(1, Number(req.query.page) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 20));
@@ -245,6 +280,8 @@ function publicOrder(row) {
     id: row.id,
     status: row.status,
     companyName: row.companyName,
+    authorizedName: row.authorizedName || '',
+    authorizedMobile: row.authorizedMobile || '',
     orderIdentifier: row.orderIdentifier,
     kamName: row.kamNameOriginal,
     msisdn: row.msisdn,
