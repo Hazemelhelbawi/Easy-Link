@@ -21,6 +21,14 @@ import { activateUserAccount, countActiveAdmins } from '../services/authService.
 import { wouldCreateCycle } from '../services/permissions.js';
 import { normalizeKey } from '../utils/normalize.js';
 import { hashPassword } from '../utils/passwords.js';
+import {
+  loadTargets,
+  upsertTarget,
+  bulkUpsertTarget,
+  deleteTarget,
+} from '../services/targetsService.js';
+import { rebuildCacheFromDisk } from '../services/reportCache.js';
+import { loadMetadata } from '../services/store.js';
 
 const router = Router();
 router.use(attachAuth, requireAuth, requirePasswordChanged, requireRoles('admin'));
@@ -50,7 +58,9 @@ const upload = multer({
 router.post('/upload', validateOrigin, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ ok: false, code: 'FILE_REQUIRED' });
   try {
-    const result = await commitWorkbookReplacement(req.file.path);
+    const result = await commitWorkbookReplacement(req.file.path, {
+      originalFileName: req.file.originalname,
+    });
     return res.json({ ok: true, data: result });
   } catch (err) {
     try {
@@ -201,6 +211,63 @@ router.get('/unassigned-names', async (_req, res) => {
     return { name, suggested, mappedPersonId: resolveKamPersonId(name, aliasMap) };
   });
   return res.json({ ok: true, data: suggestions });
+});
+
+router.get('/upload-history', async (_req, res) => {
+  const meta = await loadMetadata();
+  return res.json({
+    ok: true,
+    data: {
+      current: {
+        reportNumber: meta.reportNumber,
+        reportStatus: meta.reportStatus,
+        lastUploadAt: meta.lastUploadAt,
+        fileName: meta.fileName,
+        rowCounts: meta.rowCounts,
+      },
+      history: meta.uploadHistory || [],
+    },
+  });
+});
+
+router.post('/rebuild-cache', validateOrigin, async (_req, res) => {
+  await rebuildCacheFromDisk();
+  return res.json({ ok: true });
+});
+
+router.get('/targets', async (req, res) => {
+  const year = Number(req.query.year);
+  const month = Number(req.query.month);
+  let targets = await loadTargets();
+  if (year) targets = targets.filter((t) => t.year === year);
+  if (month) targets = targets.filter((t) => t.month === month);
+  return res.json({ ok: true, data: targets });
+});
+
+router.post('/targets', validateOrigin, async (req, res) => {
+  const body = req.body || {};
+  if (Array.isArray(body.items)) {
+    await bulkUpsertTarget(body.items);
+    return res.json({ ok: true, data: await loadTargets() });
+  }
+  const row = await upsertTarget(body);
+  return res.json({ ok: true, data: row });
+});
+
+router.delete('/targets/:personId/:year/:month', validateOrigin, async (req, res) => {
+  const data = await deleteTarget(req.params.personId, req.params.year, req.params.month);
+  return res.json({ ok: true, data });
+});
+
+router.put('/users/:id', validateOrigin, async (req, res) => {
+  const users = await loadUsers();
+  const idx = users.findIndex((u) => u.id === req.params.id);
+  if (idx < 0) return res.status(404).json({ ok: false, code: 'NOT_FOUND' });
+  const body = req.body || {};
+  if (body.role) users[idx].role = body.role;
+  if (body.username) users[idx].username = body.username;
+  await saveUsers(users);
+  return res.json({ ok: true, data: safeUser(users[idx]) });
 });
 
 router.get('/config', async (_req, res) => {

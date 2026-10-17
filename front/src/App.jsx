@@ -9,6 +9,7 @@ import OrdersPage from './pages/OrdersPage.jsx';
 import TeamPage from './pages/TeamPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
 import AppShell from './components/AppShell.jsx';
+import { ToastProvider } from './components/ToastProvider.jsx';
 
 function Protected({ children, roles }) {
   const { user, passwordChangeRequired, booting, role } = useApp();
@@ -54,9 +55,11 @@ function RouterTree() {
 export default function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
-        <RouterTree />
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <RouterTree />
+        </BrowserRouter>
+      </ToastProvider>
     </AppProvider>
   );
 }

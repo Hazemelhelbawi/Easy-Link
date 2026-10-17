@@ -12,6 +12,7 @@ export const paths = {
   users: path.join(dataRoot, 'data', 'users.json'),
   config: path.join(dataRoot, 'data', 'config.json'),
   metadata: path.join(dataRoot, 'data', 'metadata.json'),
+  targets: path.join(dataRoot, 'data', 'targets.json'),
   currentXlsx: path.join(dataRoot, 'data', 'current.xlsx'),
   jwtSecret: path.join(dataRoot, 'data', '.jwt-secret'),
   frontDist: path.join(rootDir, 'front', 'dist'),

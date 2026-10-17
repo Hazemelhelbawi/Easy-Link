@@ -113,10 +113,16 @@ function parseSheet(sheet, status, reportingYear) {
   const idxType = colIndex(normalized, 'type');
   const idxStatus = colIndex(normalized, 'status');
   const idxStatus2 = colIndex(normalized, 'status_2');
-  const idxRevenue = colIndex(normalized, 'revenue');
+  const idxRevenue = colIndex(normalized, 'revenue', 'revenue ');
   const idxMonth = colIndex(normalized, 'month');
-  const idxKamStatus = colIndex(normalized, 'kam status');
-  const idxPending = colIndex(normalized, 'pending with ...', 'pending with');
+  const idxKamStatus = colIndex(normalized, 'kam status', 'kam status ');
+  const idxPending = colIndex(
+    normalized,
+    'pending with ...',
+    'pending with ... ',
+    'pending with',
+    'under activation ',
+  );
   const idxAuthorizedName = colIndex(
     normalized,
     'authorized name',
@@ -126,6 +132,7 @@ function parseSheet(sheet, status, reportingYear) {
   );
   const idxAuthorizedMobile = colIndex(
     normalized,
+    'mobile',
     'authorized mobile',
     'authorised mobile',
     'contact mobile',
@@ -167,7 +174,10 @@ function parseSheet(sheet, status, reportingYear) {
       type: String(cell(row, idxType)).trim(),
       statusText: String(cell(row, idxStatus)).trim(),
       stage: String(stage).trim(),
-      revenue: status === 'applied' ? toNumber(cell(row, idxRevenue)) : 0,
+      revenue:
+        status === 'applied' || status === 'lost'
+          ? toNumber(cell(row, idxRevenue))
+          : 0,
       month: toMonth(cell(row, idxMonth)),
       reportingYear,
     });

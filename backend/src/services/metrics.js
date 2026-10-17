@@ -80,10 +80,35 @@ function growthPct(current, previous) {
 export function pendingByStage(rows) {
   const map = new Map();
   for (const row of rows.filter((r) => r.status === 'underActivation')) {
-    const key = row.stage || 'Unknown';
+    const key = row.stage?.trim() || 'Unknown';
     map.set(key, (map.get(key) || 0) + 1);
   }
-  return [...map.entries()].map(([stage, count]) => ({ stage, count }));
+  return [...map.entries()]
+    .map(([stage, count]) => ({ stage, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function lostMetricsForMonth(allRows, month, reportingYear) {
+  const scoped = filterRowsByMonth(
+    allRows.filter((r) => r.status === 'lost'),
+    month,
+    reportingYear,
+  );
+  return {
+    count: scoped.length,
+    revenue: scoped.reduce((s, r) => s + (r.revenue || 0), 0),
+  };
+}
+
+export function pendingMetricsForMonth(allRows, month, reportingYear) {
+  const scoped = filterRowsByMonth(
+    allRows.filter((r) => r.status === 'underActivation'),
+    month,
+    reportingYear,
+  );
+  const total = scoped.length;
+  const byStage = pendingByStage(scoped);
+  return { total, byStage };
 }
 
 export function personPerformance(appliedRows, personId, reportingYear) {

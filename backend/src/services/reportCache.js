@@ -4,6 +4,7 @@ import { validateAndParseFile } from './excelImport.js';
 import { buildAliasMap, resolveKamPersonId, isIctRow } from './identity.js';
 import { loadConfig, loadPeople, saveMetadata, withImportLock } from './store.js';
 import { atomicWriteBuffer } from '../utils/atomicWrite.js';
+import { buildOrderIndexes } from './orderFilters.js';
 
 /** @typedef {'applied'|'underActivation'|'lost'} OrderStatus */
 
@@ -39,7 +40,18 @@ let cache = {
   unassignedNames: /** @type {string[]} */ ([]),
   rowCounts: { applied: 0, underActivation: 0, lost: 0 },
   lastUploadAt: null,
+  reportMeta: /** @type {null | { reportNumber: string, reportStatus: string, fileName: string }} */ (null),
+  indexes: /** @type {ReturnType<typeof buildOrderIndexes> | null} */ (null),
 };
+
+function extractReportNumber(fileName) {
+  const base = String(fileName || '')
+    .replace(/\.xlsx$/i, '')
+    .trim();
+  const m = base.match(/report[_\s-]?(\d{4}[_\s-]?\d{1,2}[_\s-]?\d{1,2})/i);
+  if (m) return m[1].replace(/[_\s-]+/g, '-');
+  return base || 'unknown';
+}
 
 export function getReportCache() {
   return cache;
@@ -103,11 +115,19 @@ export async function rebuildCacheFromDisk() {
     unassignedNames,
     rowCounts: buildIndexes(rows),
     lastUploadAt: metadata.lastUploadAt,
+    reportMeta: metadata.reportNumber
+      ? {
+          reportNumber: metadata.reportNumber,
+          reportStatus: metadata.reportStatus || 'active',
+          fileName: metadata.fileName || 'current.xlsx',
+        }
+      : null,
+    indexes: buildOrderIndexes(rows),
   };
   return cache;
 }
 
-export async function commitWorkbookReplacement(tempPath) {
+export async function commitWorkbookReplacement(tempPath, { originalFileName } = {}) {
   return withImportLock(async () => {
     const config = await loadConfig();
     const people = await loadPeople();
@@ -119,10 +139,24 @@ export async function commitWorkbookReplacement(tempPath) {
     await atomicWriteBuffer(paths.currentXlsx, buffer);
 
     const now = new Date().toISOString();
+    const prevMeta = await (await import('./store.js')).loadMetadata();
+    const reportNumber = extractReportNumber(originalFileName || 'current.xlsx');
+    const history = Array.isArray(prevMeta.uploadHistory) ? [...prevMeta.uploadHistory] : [];
+    history.unshift({
+      at: now,
+      fileName: originalFileName || 'upload.xlsx',
+      reportNumber,
+      rowCounts: buildIndexes(rows),
+      action: 'replace',
+    });
     await saveMetadata({
       lastUploadAt: now,
       rowCounts: buildIndexes(rows),
       reportingYear: config.reportingYear,
+      reportNumber,
+      reportStatus: 'active',
+      fileName: originalFileName || 'current.xlsx',
+      uploadHistory: history.slice(0, 30),
     });
 
     cache = {
@@ -131,6 +165,12 @@ export async function commitWorkbookReplacement(tempPath) {
       unassignedNames,
       rowCounts: buildIndexes(rows),
       lastUploadAt: now,
+      reportMeta: {
+        reportNumber,
+        reportStatus: 'active',
+        fileName: originalFileName || 'current.xlsx',
+      },
+      indexes: buildOrderIndexes(rows),
     };
 
     try {
@@ -143,6 +183,8 @@ export async function commitWorkbookReplacement(tempPath) {
       rowCounts: cache.rowCounts,
       lastUploadAt: now,
       unassignedCount: unassignedNames.length,
+      reportNumber,
+      importedRows: rows.length,
     };
   });
 }

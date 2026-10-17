@@ -21,7 +21,10 @@ import {
   personPerformance,
   buildLeaderboard,
   teamBreakdown,
+  lostMetricsForMonth,
+  pendingMetricsForMonth,
 } from '../services/metrics.js';
+import { buildTargetVsActual } from '../services/targetsService.js';
 
 const router = Router();
 router.use(attachAuth, requireAuth, requirePasswordChanged);
@@ -38,6 +41,9 @@ router.get('/metadata', async (req, res) => {
       currencyCode: config.currencyCode,
       currencyLabel: config.currencyLabel,
       lastUploadAt: cache.lastUploadAt,
+      reportNumber: cache.reportMeta?.reportNumber || null,
+      reportStatus: cache.reportMeta?.reportStatus || null,
+      uploadFileName: cache.reportMeta?.fileName || null,
       rowCounts: cache.rowCounts,
       availableMonths: getAvailableMonths(
         cache.rows.filter((r) => r.status === 'applied'),
@@ -76,9 +82,32 @@ router.get('/overview', async (req, res) => {
     revenue: monthMap.get(m)?.revenue || 0,
     completed: monthMap.get(m)?.completed || 0,
   }));
-  const pending = pendingByStage(
-    selectedMonth != null ? filterRowsByMonth(visible, selectedMonth, config.reportingYear) : visible,
-  );
+  const monthScoped =
+    selectedMonth != null ? filterRowsByMonth(visible, selectedMonth, config.reportingYear) : visible;
+  const pending = pendingByStage(monthScoped);
+  const pendingSummary =
+    selectedMonth != null
+      ? pendingMetricsForMonth(visible, selectedMonth, config.reportingYear)
+      : { total: visible.filter((r) => r.status === 'underActivation').length, byStage: pending };
+  const lostSummary =
+    selectedMonth != null
+      ? lostMetricsForMonth(visible, selectedMonth, config.reportingYear)
+      : {
+          count: visible.filter((r) => r.status === 'lost').length,
+          revenue: visible.filter((r) => r.status === 'lost').reduce((s, r) => s + (r.revenue || 0), 0),
+        };
+  const targetsProgress =
+    selectedMonth != null
+      ? await buildTargetVsActual({
+          user: req.auth.user,
+          role: req.auth.role,
+          people,
+          appliedRows: applied,
+          year: config.reportingYear,
+          month: selectedMonth,
+          config,
+        })
+      : null;
   let teamPerformance = [];
   if (['admin', 'top', 'manager'].includes(req.auth.role) && req.auth.user.personId) {
     teamPerformance = teamBreakdown(
@@ -107,9 +136,38 @@ router.get('/overview', async (req, res) => {
       revenueSeries,
       monthStatusBreakdown,
       pendingByStage: pending,
+      pendingSummary,
+      lostSummary,
+      report: {
+        reportNumber: cache.reportMeta?.reportNumber || null,
+        reportStatus: cache.reportMeta?.reportStatus || 'active',
+        uploadedAt: cache.lastUploadAt,
+        fileName: cache.reportMeta?.fileName || null,
+      },
+      targetsProgress,
       teamPerformance,
     },
   });
+});
+
+router.get('/targets/progress', async (req, res) => {
+  const config = await loadConfig();
+  const people = await loadPeople();
+  const cache = getReportCache();
+  const visible = filterVisibleRows(req.auth.user, req.auth.role, people, cache.rows);
+  const applied = visible.filter((r) => r.status === 'applied');
+  const month = Number(req.query.month) || getLatestReportingMonth(applied, config.reportingYear);
+  if (!month) return res.json({ ok: true, data: null });
+  const data = await buildTargetVsActual({
+    user: req.auth.user,
+    role: req.auth.role,
+    people,
+    appliedRows: applied,
+    year: config.reportingYear,
+    month,
+    config,
+  });
+  return res.json({ ok: true, data });
 });
 
 router.get('/achievements', async (req, res) => {
@@ -196,7 +254,19 @@ router.get('/orders/options', async (req, res) => {
   const status = req.query.status ? String(req.query.status) : null;
   const month = req.query.month ? String(req.query.month) : 'all';
   const options = collectOrderFilterOptions(visible, { status, month, reportingYear: config.reportingYear });
-  return res.json({ ok: true, data: options });
+  const peopleOptions = people
+    .filter((p) => {
+      if (req.auth.role === 'admin' || req.auth.role === 'top') return true;
+      if (req.auth.role === 'manager') {
+        const team = new Set([req.auth.user.personId]);
+        for (const x of people) if (x.managerId === req.auth.user.personId) team.add(x.id);
+        return team.has(p.id);
+      }
+      return p.id === req.auth.user.personId;
+    })
+    .map((p) => ({ id: p.id, name: p.displayName }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return res.json({ ok: true, data: { ...options, people: peopleOptions } });
 });
 
 router.get('/orders', async (req, res) => {
@@ -226,6 +296,67 @@ router.get('/orders', async (req, res) => {
     data: { items, total, page, pageSize },
   });
 });
+
+router.get('/orders/export', async (req, res) => {
+  const config = await loadConfig();
+  const people = await loadPeople();
+  const cache = getReportCache();
+  let visible = filterVisibleRows(req.auth.user, req.auth.role, people, cache.rows);
+  const person = req.query.person ? String(req.query.person) : null;
+  if (person) {
+    if (!canViewPersonMetrics(req.auth.user, req.auth.role, people, person)) {
+      return res.status(403).json({ ok: false, code: 'FORBIDDEN' });
+    }
+    visible = visible.filter((r) => r.personId === person);
+  }
+  visible = applyOrderQueryFilters(visible, req.query, config.reportingYear);
+  const header = [
+    'Company',
+    'Order',
+    'Authorized Name',
+    'Mobile',
+    'KAM',
+    'MSISDN',
+    'Package',
+    'MRC',
+    'Revenue',
+    'Status',
+    'Stage',
+    'Month',
+  ];
+  const lines = [header.join(',')];
+  for (const row of visible) {
+    lines.push(
+      [
+        row.companyName,
+        row.orderIdentifier,
+        row.authorizedName,
+        row.authorizedMobile,
+        row.kamNameOriginal,
+        row.msisdn,
+        row.packageName,
+        row.mrc,
+        row.revenue,
+        row.statusText,
+        row.stage,
+        row.month,
+      ]
+        .map(csvEscape)
+        .join(','),
+    );
+  }
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="orders-export.csv"');
+  return res.send(`\uFEFF${lines.join('\n')}`);
+});
+
+function csvEscape(value) {
+  const s = String(value ?? '');
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
 
 router.get('/team', async (req, res) => {
   const config = await loadConfig();
