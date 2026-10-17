@@ -1,10 +1,11 @@
-import { normalizeKey } from '../utils/normalize.js';
+import { normalizeKey } from "../utils/normalize.js";
 
 export function getAvailableMonths(rows, reportingYear) {
   const months = new Set();
   for (const row of rows) {
-    if (row.status !== 'applied') continue;
-    if (row.month && row.reportingYear === reportingYear) months.add(row.month);
+    if (row.month == null || row.reportingYear !== reportingYear) continue;
+    const month = Number(row.month);
+    if (Number.isFinite(month)) months.add(month);
   }
   return [...months].sort((a, b) => a - b);
 }
@@ -16,22 +17,26 @@ export function getLatestReportingMonth(rows, reportingYear) {
 
 export function aggregateOverview(appliedRows, allRows) {
   const applied = appliedRows.length;
-  const underActivation = allRows.filter((r) => r.status === 'underActivation').length;
-  const lost = allRows.filter((r) => r.status === 'lost').length;
+  const underActivation = allRows.filter(
+    (r) => r.status === "underActivation",
+  ).length;
+  const lost = allRows.filter((r) => r.status === "lost").length;
   const appliedRevenue = appliedRows.reduce((s, r) => s + (r.revenue || 0), 0);
   return { applied, underActivation, lost, appliedRevenue };
 }
 
 export function filterRowsByMonth(rows, month, reportingYear) {
-  if (!month || month === 'all') return rows;
+  if (!month || month === "all") return rows;
   const m = Number(month);
   if (!Number.isFinite(m)) return rows;
-  return rows.filter((r) => r.month === m && r.reportingYear === reportingYear);
+  return rows.filter(
+    (r) => Number(r.month) === m && r.reportingYear === reportingYear,
+  );
 }
 
 export function aggregateOverviewForMonth(allRows, month, reportingYear) {
   const scoped = filterRowsByMonth(allRows, month, reportingYear);
-  const appliedRows = scoped.filter((r) => r.status === 'applied');
+  const appliedRows = scoped.filter((r) => r.status === "applied");
   return aggregateOverview(appliedRows, scoped);
 }
 
@@ -39,7 +44,7 @@ export function appliedStatusBreakdown(appliedRows, month, reportingYear) {
   const scoped = filterRowsByMonth(appliedRows, month, reportingYear);
   const map = new Map();
   for (const row of scoped) {
-    const key = row.statusText || '—';
+    const key = row.statusText || "—";
     map.set(key, (map.get(key) || 0) + 1);
   }
   return [...map.entries()]
@@ -61,7 +66,13 @@ export function monthlyAppliedMetrics(appliedRows, reportingYear) {
 }
 
 export function monthComparison(map, month) {
-  if (!month) return { current: null, previous: null, revenueGrowth: null, orderGrowth: null };
+  if (!month)
+    return {
+      current: null,
+      previous: null,
+      revenueGrowth: null,
+      orderGrowth: null,
+    };
   const current = map.get(month) || { revenue: 0, completed: 0 };
   const previous = map.get(month - 1) || { revenue: 0, completed: 0 };
   return {
@@ -79,8 +90,8 @@ function growthPct(current, previous) {
 
 export function pendingByStage(rows) {
   const map = new Map();
-  for (const row of rows.filter((r) => r.status === 'underActivation')) {
-    const key = row.stage?.trim() || 'Unknown';
+  for (const row of rows.filter((r) => r.status === "underActivation")) {
+    const key = row.stage?.trim() || "Unknown";
     map.set(key, (map.get(key) || 0) + 1);
   }
   return [...map.entries()]
@@ -90,7 +101,7 @@ export function pendingByStage(rows) {
 
 export function lostMetricsForMonth(allRows, month, reportingYear) {
   const scoped = filterRowsByMonth(
-    allRows.filter((r) => r.status === 'lost'),
+    allRows.filter((r) => r.status === "lost"),
     month,
     reportingYear,
   );
@@ -102,7 +113,7 @@ export function lostMetricsForMonth(allRows, month, reportingYear) {
 
 export function pendingMetricsForMonth(allRows, month, reportingYear) {
   const scoped = filterRowsByMonth(
-    allRows.filter((r) => r.status === 'underActivation'),
+    allRows.filter((r) => r.status === "underActivation"),
     month,
     reportingYear,
   );
@@ -112,7 +123,9 @@ export function pendingMetricsForMonth(allRows, month, reportingYear) {
 }
 
 export function personPerformance(appliedRows, personId, reportingYear) {
-  const rows = appliedRows.filter((r) => r.personId === personId && r.reportingYear === reportingYear);
+  const rows = appliedRows.filter(
+    (r) => r.personId === personId && r.reportingYear === reportingYear,
+  );
   const byMonth = monthlyAppliedMetrics(rows, reportingYear);
   let bestMonth = null;
   let bestRevenue = -1;
@@ -125,10 +138,16 @@ export function personPerformance(appliedRows, personId, reportingYear) {
   return { byMonth, bestMonth, rows };
 }
 
-export function buildLeaderboard(appliedRows, people, reportingYear, monthFilter, groupFilter) {
+export function buildLeaderboard(
+  appliedRows,
+  people,
+  reportingYear,
+  monthFilter,
+  groupFilter,
+) {
   const filteredPeople = people.filter((p) => {
-    if (!groupFilter || groupFilter === 'all') return true;
-    if (groupFilter === 'ict') return p.group === 'ict' || p.orgRole === 'ict';
+    if (!groupFilter || groupFilter === "all") return true;
+    if (groupFilter === "ict") return p.group === "ict" || p.orgRole === "ict";
     return p.group === groupFilter;
   });
   const allowedIds = new Set(filteredPeople.map((p) => p.id));
@@ -139,10 +158,19 @@ export function buildLeaderboard(appliedRows, people, reportingYear, monthFilter
   for (const row of appliedRows) {
     if (!row.personId || !allowedIds.has(row.personId)) continue;
     if (row.reportingYear !== reportingYear) continue;
-    if (monthFilter && monthFilter !== 'all' && row.month !== Number(monthFilter)) continue;
+    if (
+      monthFilter &&
+      monthFilter !== "all" &&
+      row.month !== Number(monthFilter)
+    )
+      continue;
     const person = filteredPeople.find((p) => p.id === row.personId);
     if (!person) continue;
-    const cur = scores.get(row.personId) || { revenue: 0, completed: 0, person };
+    const cur = scores.get(row.personId) || {
+      revenue: 0,
+      completed: 0,
+      person,
+    };
     cur.revenue += row.revenue || 0;
     cur.completed += 1;
     scores.set(row.personId, cur);
@@ -166,7 +194,13 @@ export function buildLeaderboard(appliedRows, people, reportingYear, monthFilter
   return entries;
 }
 
-export function teamBreakdown(appliedRows, people, managerPersonId, reportingYear, month) {
+export function teamBreakdown(
+  appliedRows,
+  people,
+  managerPersonId,
+  reportingYear,
+  month,
+) {
   const teamIds = new Set([managerPersonId]);
   for (const p of people) {
     if (p.managerId === managerPersonId) teamIds.add(p.id);

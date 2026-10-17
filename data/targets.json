@@ -1,3 +1,36 @@
 {
-  "targets": []
+  "targets": [
+    {
+      "personId": "p-alaa-obeid",
+      "year": 2026,
+      "month": 3,
+      "revenueTarget": 20000,
+      "ordersTarget": 3,
+      "updatedAt": "2026-10-17T16:10:20.315Z"
+    },
+    {
+      "personId": "p-alaa-obeid",
+      "year": 2026,
+      "month": 10,
+      "revenueTarget": 20000,
+      "ordersTarget": 20,
+      "updatedAt": "2026-10-17T16:13:59.334Z"
+    },
+    {
+      "personId": "p-osama-magdy",
+      "year": 2026,
+      "month": 10,
+      "revenueTarget": 20000,
+      "ordersTarget": 20,
+      "updatedAt": "2026-10-17T22:33:31.231Z"
+    },
+    {
+      "personId": "p-mahmoud-el-sheikh",
+      "year": 2026,
+      "month": 10,
+      "revenueTarget": 2000,
+      "ordersTarget": 20,
+      "updatedAt": "2026-10-17T22:34:17.860Z"
+    }
+  ]
 }

@@ -1,9 +1,102 @@
 {
-  "lastUploadAt": "2026-10-15T22:29:44.286Z",
+  "lastUploadAt": "2026-10-17T22:26:54.312Z",
   "rowCounts": {
     "applied": 5912,
     "underActivation": 720,
     "lost": 1296
   },
-  "reportingYear": 2026
+  "reportingYear": 2026,
+  "reportNumber": "2026-10-13",
+  "reportStatus": "active",
+  "fileName": "Report 2026 10 13.xlsx",
+  "uploadHistory": [
+    {
+      "at": "2026-10-17T22:26:54.312Z",
+      "fileName": "Report 2026 10 13.xlsx",
+      "reportNumber": "2026-10-13",
+      "rowCounts": {
+        "applied": 5912,
+        "underActivation": 720,
+        "lost": 1296
+      },
+      "action": "replace"
+    },
+    {
+      "at": "2026-10-17T22:23:09.143Z",
+      "fileName": "Report 2026 10 13.xlsx",
+      "reportNumber": "2026-10-13",
+      "rowCounts": {
+        "applied": 5912,
+        "underActivation": 720,
+        "lost": 1296
+      },
+      "action": "replace"
+    },
+    {
+      "at": "2026-10-17T22:19:40.310Z",
+      "fileName": "Report 2026 10 13.xlsx",
+      "reportNumber": "2026-10-13",
+      "rowCounts": {
+        "applied": 5912,
+        "underActivation": 720,
+        "lost": 1296
+      },
+      "action": "replace"
+    },
+    {
+      "at": "2026-10-17T22:13:33.509Z",
+      "fileName": "Report 2026 10 13.xlsx",
+      "reportNumber": "2026-10-13",
+      "rowCounts": {
+        "applied": 5912,
+        "underActivation": 720,
+        "lost": 1296
+      },
+      "action": "replace"
+    },
+    {
+      "at": "2026-10-17T22:08:56.624Z",
+      "fileName": "Report 2026 10 13.xlsx",
+      "reportNumber": "2026-10-13",
+      "rowCounts": {
+        "applied": 5912,
+        "underActivation": 720,
+        "lost": 1296
+      },
+      "action": "replace"
+    },
+    {
+      "at": "2026-10-17T22:05:26.935Z",
+      "fileName": "Report 2026 10 13.xlsx",
+      "reportNumber": "2026-10-13",
+      "rowCounts": {
+        "applied": 5912,
+        "underActivation": 720,
+        "lost": 1296
+      },
+      "action": "replace"
+    },
+    {
+      "at": "2026-10-17T22:00:29.690Z",
+      "fileName": "Report 2026 10 13.xlsx",
+      "reportNumber": "2026-10-13",
+      "rowCounts": {
+        "applied": 5912,
+        "underActivation": 720,
+        "lost": 1296
+      },
+      "action": "replace"
+    },
+    {
+      "at": "2026-10-17T16:09:30.210Z",
+      "fileName": "Report 2026 10 13.xlsx",
+      "reportNumber": "2026-10-13",
+      "rowCounts": {
+        "applied": 5912,
+        "underActivation": 720,
+        "lost": 1296
+      },
+      "action": "replace"
+    }
+  ]
 }
