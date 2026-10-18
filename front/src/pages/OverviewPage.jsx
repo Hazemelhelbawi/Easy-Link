@@ -1,26 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { BarChart3, CheckCircle2, Clock3, XCircle, FileText } from 'lucide-react';
+import { BarChart3, CheckCircle2, Clock3, XCircle } from 'lucide-react';
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
-  BarChart,
-  Bar,
-  Cell,
+  CartesianGrid,
 } from 'recharts';
 import { api } from '../api/client.js';
 import { useApp } from '../context/AppContext.jsx';
 import { t } from '../i18n/index.js';
 import StatCard from '../components/StatCard.jsx';
+import ReportMetaBanner from '../components/ReportMetaBanner.jsx';
+import PendingBreakdown from '../components/PendingBreakdown.jsx';
+import AppliedStatusBreakdown from '../components/AppliedStatusBreakdown.jsx';
+import { chartValueAxisMargin, chartValueYAxisProps, rechartsTooltipProps } from '../components/rechartsTheme.jsx';
 import { OverviewSkeleton } from '../components/Skeleton.jsx';
 import { defaultReportingMonth } from '../utils/monthDefaults.js';
-import { formatCurrency, formatDateTime, formatNumber } from '../utils/format.js';
-
-const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)'];
+import { formatChartAxisNumber, formatCurrency, formatNumber } from '../utils/format.js';
 
 export default function OverviewPage() {
   const { lang, metadata, role } = useApp();
@@ -49,6 +48,32 @@ export default function OverviewPage() {
   const months = t(lang, 'months');
   const monthLabel = activeMonth ? months[activeMonth] : '';
   const chartTick = { fill: 'var(--text-muted)', fontSize: 12 };
+  const isRtl = lang === 'ar';
+  const axisNumber = (v) => formatChartAxisNumber(lang, v);
+
+  const monthSpark = useMemo(() => {
+    if (!data?.revenueSeries?.length || activeMonth == null) {
+      return { revenue: [], orders: [] };
+    }
+    const idx = data.revenueSeries.findIndex((s) => s.month === activeMonth);
+    const end = idx >= 0 ? idx + 1 : data.revenueSeries.length;
+    const start = Math.max(0, end - 3);
+    const slice = data.revenueSeries.slice(start, end);
+    return {
+      revenue: slice.map((s) => s.revenue),
+      orders: slice.map((s) => s.completed),
+    };
+  }, [data?.revenueSeries, activeMonth]);
+
+  const pipeline = useMemo(() => {
+    if (!data?.summary) return null;
+    const applied = data.summary.applied || 0;
+    const pending = data.summary.underActivation || 0;
+    const lost = data.lostSummary?.count ?? data.summary.lost ?? 0;
+    const total = applied + pending + lost;
+    if (total <= 0) return null;
+    return { applied, pending, lost, total };
+  }, [data?.summary, data?.lostSummary?.count]);
 
   if (loading && !data) return <OverviewSkeleton />;
 
@@ -81,80 +106,108 @@ export default function OverviewPage() {
         </label>
       </div>
 
-      {data?.report ? (
-        <div className="card report-meta-card">
-          <FileText size={20} color="var(--accent)" />
-          <div>
-            <div className="stat-label">{t(lang, 'currentReport')}</div>
-            <strong>{data.report.reportNumber || '—'}</strong>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              {data.report.reportStatus} · {formatDateTime(lang, data.report.uploadedAt)}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       {data ? (
-        <div className="grid-4">
-          <StatCard label={t(lang, 'appliedOrders')} value={formatNumber(lang, data.summary.applied)} icon={CheckCircle2} />
-          <StatCard
-            label={t(lang, 'underActivationOrders')}
-            value={formatNumber(lang, data.summary.underActivation)}
-            icon={Clock3}
-          />
-          <Link to={ordersLink({ status: 'lost' })} className="card-link">
-            <StatCard label={t(lang, 'lostOrders')} value={formatNumber(lang, data.lostSummary?.count || 0)} icon={XCircle} />
-          </Link>
-          <StatCard
-            label={t(lang, 'appliedRevenue')}
-            value={formatCurrency(lang, data.summary.appliedRevenue, metadata)}
-            icon={BarChart3}
-            hint={
-              data.comparison.revenueGrowth != null
-                ? `${data.comparison.revenueGrowth.toFixed(1)}% ${t(lang, 'vsPrevMonth')}`
-                : 'N/A'
-            }
-          />
-        </div>
-      ) : null}
+        <section className="overview-snapshot">
+          {data.report ? <ReportMetaBanner report={data.report} lang={lang} /> : null}
 
-      {data?.lostSummary ? (
-        <Link to={ordersLink({ status: 'lost' })} className="card card-link-inline">
-          <strong>{t(lang, 'lostRevenueMonth')}</strong>: {formatCurrency(lang, data.lostSummary.revenue, metadata)}
-        </Link>
+          <div className="overview-kpi-grid">
+            <StatCard
+              lang={lang}
+              tone="applied"
+              label={t(lang, 'appliedOrders')}
+              value={formatNumber(lang, data.summary.applied)}
+              icon={CheckCircle2}
+              to={ordersLink({ status: 'applied' })}
+              trend={data.comparison.orderGrowth}
+              hint={t(lang, 'vsPrevMonth')}
+              spark={monthSpark.orders}
+            />
+            <StatCard
+              lang={lang}
+              tone="pending"
+              label={t(lang, 'underActivationOrders')}
+              value={formatNumber(lang, data.summary.underActivation)}
+              icon={Clock3}
+              to={ordersLink({ status: 'underActivation' })}
+              footnote={
+                pipeline
+                  ? `${((pipeline.pending / pipeline.total) * 100).toFixed(0)}% ${t(lang, 'pipelineShare')}`
+                  : null
+              }
+            />
+            <StatCard
+              lang={lang}
+              tone="lost"
+              label={t(lang, 'lostOrders')}
+              value={formatNumber(lang, data.lostSummary?.count || 0)}
+              icon={XCircle}
+              to={ordersLink({ status: 'lost' })}
+              footnote={
+                data.lostSummary?.revenue
+                  ? `${t(lang, 'lostRevenueMonth')}: ${formatCurrency(lang, data.lostSummary.revenue, metadata)}`
+                  : null
+              }
+            />
+            <StatCard
+              tone="revenue"
+              label={t(lang, 'appliedRevenue')}
+              value={formatCurrency(lang, data.summary.appliedRevenue, metadata)}
+              icon={BarChart3}
+              trend={data.comparison.revenueGrowth}
+              hint={t(lang, 'vsPrevMonth')}
+              spark={monthSpark.revenue}
+            />
+          </div>
+
+          {pipeline ? (
+            <div className="pipeline-mix">
+              <div className="pipeline-mix-head">
+                <span>{t(lang, 'pipelineMix')}</span>
+                <span dir="ltr">{formatNumber(lang, pipeline.total)}</span>
+              </div>
+              <div className="pipeline-mix-bar" role="img" aria-label={t(lang, 'pipelineMix')}>
+                <span
+                  className="seg applied"
+                  style={{ width: `${(pipeline.applied / pipeline.total) * 100}%` }}
+                  title={t(lang, 'appliedOrders')}
+                />
+                <span
+                  className="seg pending"
+                  style={{ width: `${(pipeline.pending / pipeline.total) * 100}%` }}
+                  title={t(lang, 'underActivationOrders')}
+                />
+                <span
+                  className="seg lost"
+                  style={{ width: `${(pipeline.lost / pipeline.total) * 100}%` }}
+                  title={t(lang, 'lostOrders')}
+                />
+              </div>
+              <ul className="pipeline-mix-legend">
+                <li>
+                  <i className="dot applied" /> {t(lang, 'appliedOrders')}
+                </li>
+                <li>
+                  <i className="dot pending" /> {t(lang, 'underActivationOrders')}
+                </li>
+                <li>
+                  <i className="dot lost" /> {t(lang, 'lostOrders')}
+                </li>
+              </ul>
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
       {data?.pendingSummary ? (
-        <div className="card">
-          <h3 style={{ marginTop: 0 }}>
-            {t(lang, 'pendingBreakdown')} ({formatNumber(lang, data.pendingSummary.total)})
-          </h3>
-          <div className="grid-4 compact-cards">
-            {data.pendingSummary.byStage.slice(0, 6).map((item) => (
-              <Link
-                key={item.stage}
-                to={ordersLink({ status: 'underActivation', stages: item.stage })}
-                className="mini-card"
-              >
-                <span>{item.stage.trim()}</span>
-                <strong>{formatNumber(lang, item.count)}</strong>
-              </Link>
-            ))}
+        <div className="card pending-breakdown-card">
+          <div className="pending-breakdown-header">
+            <h3 style={{ margin: 0 }}>{t(lang, 'pendingBreakdown')}</h3>
+            <span className="pending-total-badge" dir="ltr">
+              {formatNumber(lang, data.pendingSummary.total)}
+            </span>
           </div>
-          <div className="chart-card" style={{ height: 260 }}>
-            {data.pendingSummary.byStage.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.pendingSummary.byStage} layout="vertical">
-                  <XAxis type="number" tick={chartTick} />
-                  <YAxis type="category" dataKey="stage" width={140} tick={chartTick} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 8, 8, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="empty-state">{t(lang, 'empty')}</p>
-            )}
-          </div>
+          <p className="pending-breakdown-sub">{t(lang, 'pendingBreakdownHint')}</p>
+          <PendingBreakdown summary={data.pendingSummary} lang={lang} ordersLink={ordersLink} />
         </div>
       ) : null}
 
@@ -189,34 +242,39 @@ export default function OverviewPage() {
           <div className="card chart-card">
             <h3>{t(lang, 'appliedRevenue')}</h3>
             <ResponsiveContainer width="100%" height="85%">
-              <LineChart data={data.revenueSeries}>
-                <XAxis dataKey="month" tickFormatter={(m) => months[m]} tick={chartTick} />
-                <YAxis tick={chartTick} />
-                <Tooltip labelFormatter={(m) => months[m]} />
-                <Line type="monotone" dataKey="revenue" stroke="var(--chart-1)" strokeWidth={3} dot={false} />
-              </LineChart>
+              <BarChart
+                data={data.revenueSeries}
+                margin={chartValueAxisMargin(isRtl, 52)}
+                barCategoryGap="28%"
+              >
+                <defs>
+                  <linearGradient id="revenueColGrad" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis dataKey="month" tickFormatter={(m) => months[m]} tick={chartTick} axisLine={{ stroke: 'var(--border)' }} tickLine={false} />
+                <YAxis {...chartValueYAxisProps(isRtl, axisNumber)} />
+                <Tooltip
+                  {...rechartsTooltipProps}
+                  labelFormatter={(m) => months[m]}
+                  formatter={(value) => [formatCurrency(lang, value, metadata), t(lang, 'appliedRevenue')]}
+                />
+                <Bar dataKey="revenue" fill="url(#revenueColGrad)" radius={[6, 6, 0, 0]} maxBarSize={40} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="card chart-card">
-            <h3>
-              {t(lang, 'underActivation')} — {monthLabel}
+          <div className="card chart-card applied-status-card">
+            <h3 style={{ marginTop: 0 }}>
+              {t(lang, 'appliedOrders')} — {monthLabel}
             </h3>
-            {data.pendingByStage?.length ? (
-              <ResponsiveContainer width="100%" height="85%">
-                <BarChart data={data.pendingByStage}>
-                  <XAxis dataKey="stage" tick={chartTick} interval={0} angle={-20} textAnchor="end" height={70} />
-                  <YAxis tick={chartTick} />
-                  <Tooltip />
-                  <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                    {data.pendingByStage.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="empty-state">{t(lang, 'emptyPendingChart')}</p>
-            )}
+            <p className="pending-breakdown-sub">{t(lang, 'appliedStatusHint')}</p>
+            <AppliedStatusBreakdown
+              items={data.monthStatusBreakdown}
+              lang={lang}
+              ordersLink={ordersLink}
+            />
           </div>
         </div>
       ) : null}

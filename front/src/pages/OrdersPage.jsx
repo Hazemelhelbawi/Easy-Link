@@ -8,6 +8,7 @@ import { defaultReportingMonth } from '../utils/monthDefaults.js';
 import { telHref, whatsAppHref } from '../utils/phoneLinks.js';
 import { formatCurrency, formatNumber } from '../utils/format.js';
 import { Skeleton } from '../components/Skeleton.jsx';
+import OrderFilterPanel from '../components/OrderFilterPanel.jsx';
 
 const tabs = [
   { key: 'applied', labelKey: 'applied' },
@@ -20,7 +21,14 @@ export default function OrdersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [options, setOptions] = useState({ companies: [], statusTexts: [], stages: [], people: [] });
+  const [options, setOptions] = useState({
+    companies: [],
+    statusTexts: [],
+    stages: [],
+    statusOptions: [],
+    stageOptions: [],
+    people: [],
+  });
   const [companyQuery, setCompanyQuery] = useState('');
 
   const defaultMonth = useMemo(
@@ -116,25 +124,48 @@ export default function OrdersPage() {
     return v === null || v === undefined || v === '' ? '—' : v;
   }
 
+  function clearAllFilters() {
+    setCompanyQuery('');
+    setSearchParams(
+      new URLSearchParams({
+        status,
+        month: String(defaultMonth || month),
+      }),
+      { replace: true },
+    );
+  }
+
   return (
     <>
-      <div className="filters-bar">
-        <div className="filters-row">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              className={`btn ${status === tab.key ? '' : 'ghost'}`}
-              onClick={() => patchParams({ status: tab.key, page: 1, statusTexts: '', stages: '' })}
-            >
-              {t(lang, tab.labelKey)}
+      <div className="filters-bar orders-toolbar">
+        <div className="orders-toolbar-top">
+          <div className="tab-segment" role="tablist">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={status === tab.key}
+                className={`tab-segment-btn ${status === tab.key ? 'active' : ''}`}
+                onClick={() => patchParams({ status: tab.key, page: 1, statusTexts: '', stages: '' })}
+              >
+                {t(lang, tab.labelKey)}
+              </button>
+            ))}
+          </div>
+          <div className="orders-toolbar-actions">
+            {data ? (
+              <span className="results-badge" dir="ltr">
+                {formatNumber(lang, data.total)} {t(lang, 'resultsShort')}
+              </span>
+            ) : null}
+            <button type="button" className="btn ghost btn-sm" onClick={exportCsv}>
+              <Download size={16} /> CSV
             </button>
-          ))}
-          <button type="button" className="btn ghost" onClick={exportCsv}>
-            <Download size={16} /> CSV
-          </button>
+          </div>
         </div>
-        <div className="filters-row">
+
+        <div className="orders-toolbar-grid">
           <label className="filter-field">
             <span>{t(lang, 'filterMonth')}</span>
             <select className="input" value={month} onChange={(e) => patchParams({ month: e.target.value, page: 1 })}>
@@ -187,52 +218,21 @@ export default function OrdersPage() {
               onChange={(e) => patchParams({ search: e.target.value, page: 1 })}
             />
           </label>
-          <button
-            className="btn ghost"
-            type="button"
-            onClick={() => {
-              setCompanyQuery('');
-              setSearchParams(new URLSearchParams({ status, month: String(defaultMonth || month) }), { replace: true });
-            }}
-          >
+          <button className="btn ghost btn-sm" type="button" onClick={clearAllFilters}>
             {t(lang, 'clearFilters')}
           </button>
         </div>
-        {options.statusTexts?.length ? (
-          <div className="chip-filter-row">
-            <span>{t(lang, 'filterStatus')}:</span>
-            {options.statusTexts.slice(0, 12).map((s) => (
-              <button
-                key={s}
-                type="button"
-                className={`chip ${statusTexts.includes(s) ? 'active' : ''}`}
-                onClick={() => toggleInList('statusTexts', s)}
-              >
-                {s.trim()}
-              </button>
-            ))}
-          </div>
-        ) : null}
-        {options.stages?.length ? (
-          <div className="chip-filter-row">
-            <span>{t(lang, 'filterStage')}:</span>
-            {options.stages.slice(0, 12).map((s) => (
-              <button
-                key={s}
-                type="button"
-                className={`chip ${stages.includes(s) ? 'active' : ''}`}
-                onClick={() => toggleInList('stages', s)}
-              >
-                {s.trim()}
-              </button>
-            ))}
-          </div>
-        ) : null}
-        {data ? (
-          <p className="filters-meta">
-            {t(lang, 'resultsCount')}: {formatNumber(lang, data.total)}
-          </p>
-        ) : null}
+
+        <OrderFilterPanel
+          lang={lang}
+          sheetStatus={status}
+          options={options}
+          selectedStatuses={statusTexts}
+          selectedStages={stages}
+          onToggleStatus={(v) => toggleInList('statusTexts', v)}
+          onToggleStage={(v) => toggleInList('stages', v)}
+          onClear={() => patchParams({ statusTexts: '', stages: '', page: 1 })}
+        />
       </div>
 
       <div className="card table-wrap">

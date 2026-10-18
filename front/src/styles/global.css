@@ -1,5 +1,7 @@
 @import './tokens.css';
 @import './fonts.css';
+@import './theme-charts.css';
+@import './theme-dark.css';
 
 * {
   box-sizing: border-box;

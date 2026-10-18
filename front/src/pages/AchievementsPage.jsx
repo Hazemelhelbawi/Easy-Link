@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+import {
+  chartValueAxisMargin,
+  chartValueYAxisProps,
+  rechartsTooltipProps,
+} from '../components/rechartsTheme.jsx';
+import { formatChartAxisNumber } from '../utils/format.js';
 import { api } from '../api/client.js';
 import { useApp } from '../context/AppContext.jsx';
 import { t } from '../i18n/index.js';
@@ -15,6 +21,9 @@ export default function AchievementsPage() {
   if (!data) return <div>{t(lang, 'loading')}</div>;
   const months = t(lang, 'months');
   const fmt = (n) => new Intl.NumberFormat(lang === 'ar' ? 'ar-SA' : 'en-US').format(n);
+  const isRtl = lang === 'ar';
+  const axisNumber = (v) => formatChartAxisNumber(lang, v);
+  const chartTick = { fill: 'var(--text-muted)', fontSize: 12 };
 
   return (
     <>
@@ -38,10 +47,10 @@ export default function AchievementsPage() {
       </div>
       <div className="card" style={{ height: 340 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data.monthly}>
-            <XAxis dataKey="month" tickFormatter={(m) => months[m]} />
-            <YAxis />
-            <Tooltip labelFormatter={(m) => months[m]} />
+          <AreaChart data={data.monthly} margin={chartValueAxisMargin(isRtl)}>
+            <XAxis dataKey="month" tickFormatter={(m) => months[m]} tick={chartTick} axisLine={{ stroke: 'var(--border)' }} tickLine={false} />
+            <YAxis {...chartValueYAxisProps(isRtl, axisNumber)} />
+            <Tooltip {...rechartsTooltipProps} labelFormatter={(m) => months[m]} />
             <Area type="monotone" dataKey="revenue" stroke="var(--chart-1)" fill="var(--chart-1)" fillOpacity={0.15} />
           </AreaChart>
         </ResponsiveContainer>

@@ -4,13 +4,16 @@ export function Skeleton({ height = 16, width = '100%', className = '' }) {
 
 export function OverviewSkeleton() {
   return (
-    <div className="grid-4">
-      {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="card">
-          <Skeleton height={14} width="60%" />
-          <Skeleton height={32} width="40%" className="sk-mt" />
-        </div>
-      ))}
+    <div className="overview-snapshot">
+      <Skeleton height={72} width="100%" />
+      <div className="overview-kpi-grid">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="stat-card">
+            <Skeleton height={14} width="60%" />
+            <Skeleton height={32} width="40%" className="sk-mt" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -10,7 +10,8 @@
     "build": "npm run build --prefix front",
     "start": "npm start --prefix backend",
     "test": "npm test --prefix backend",
-    "bootstrap:admin": "npm run bootstrap:admin --prefix backend"
+    "bootstrap:admin": "npm run bootstrap:admin --prefix backend",
+    "reset:admin": "npm run reset:admin --prefix backend"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -5,6 +5,24 @@ export function formatNumber(lang, value) {
   }).format(n);
 }
 
+/** Short axis labels (e.g. 200K). Always LTR digits so RTL UI does not flip "800K" into unreadable order. */
+export function formatChartAxisNumber(_lang, value) {
+  const n = Number(value) || 0;
+  const abs = Math.abs(n);
+  const fmt = (v, digits = 0) =>
+    new Intl.NumberFormat('en-US', { maximumFractionDigits: digits }).format(v);
+  const ltr = (s) => `\u200E${s}`;
+  if (abs >= 1_000_000) {
+    const scaled = n / 1_000_000;
+    return ltr(`${fmt(scaled, scaled >= 10 ? 0 : 1)}M`);
+  }
+  if (abs >= 1000) {
+    const scaled = n / 1000;
+    return ltr(`${fmt(scaled, 0)}K`);
+  }
+  return ltr(fmt(n, 0));
+}
+
 export function formatCurrency(lang, value, metadata) {
   const n = Number(value) || 0;
   const code = metadata?.currencyCode || 'SAR';

@@ -1,4 +1,18 @@
 import { matchSearch } from './permissions.js';
+import { isGarbageStatusLabel } from '../utils/normalize.js';
+
+function buildCountedOptions(rows, pick, limit = 20) {
+  const map = new Map();
+  for (const row of rows) {
+    const value = String(pick(row) ?? '').trim();
+    if (!value || isGarbageStatusLabel(value)) continue;
+    map.set(value, (map.get(value) || 0) + 1);
+  }
+  return [...map.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([value, count]) => ({ value, count }));
+}
 
 export function filterByMonth(rows, month, reportingYear) {
   if (!month || month === 'all') return rows;
@@ -86,12 +100,12 @@ export function collectOrderFilterOptions(rows, { status, month, reportingYear }
   const companies = [...new Set(base.map((r) => r.companyName).filter(Boolean))].sort((a, b) =>
     a.localeCompare(b),
   );
-  const statusTexts = [...new Set(base.map((r) => r.statusText).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b),
-  );
-  const stages = [...new Set(base.map((r) => r.stage).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const statusOptions = buildCountedOptions(base, (r) => r.statusText);
+  const stageOptions = buildCountedOptions(base, (r) => r.stage);
+  const statusTexts = statusOptions.map((o) => o.value);
+  const stages = stageOptions.map((o) => o.value);
 
-  return { companies, statusTexts, stages };
+  return { companies, statusTexts, stages, statusOptions, stageOptions };
 }
 
 export function buildOrderIndexes(rows) {

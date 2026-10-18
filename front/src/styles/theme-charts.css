@@ -1,0 +1,16 @@
+/* Recharts typography — light & dark via CSS variables */
+.recharts-cartesian-axis-tick text {
+  fill: var(--text-muted);
+}
+
+.recharts-label-list text {
+  fill: var(--text);
+}
+
+.recharts-cartesian-grid line {
+  stroke: var(--border);
+}
+
+.recharts-cartesian-grid path {
+  stroke: var(--border);
+}

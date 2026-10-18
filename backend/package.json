@@ -6,6 +6,7 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "bootstrap:admin": "node scripts/bootstrapAdmin.js",
+    "reset:admin": "node scripts/resetAdminPassword.js",
     "test": "node --test test/**/*.test.js"
   },
   "dependencies": {

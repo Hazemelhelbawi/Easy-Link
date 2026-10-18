@@ -6,6 +6,7 @@ import {
   toNumber,
   toMonth,
   normalizeKey,
+  normalizeOrderStatusText,
 } from "../utils/normalize.js";
 
 const REQUIRED_SHEETS = [
@@ -268,6 +269,11 @@ function parseSheet(sheet, status, reportingYear) {
           ? cell(row, idxPending >= 0 ? idxPending : idxStatus)
           : cell(row, idxStatus);
 
+    const statusPrimary = cell(row, idxStatus);
+    const statusSecondary = idxStatus2 >= 0 ? cell(row, idxStatus2) : "";
+    const statusTextRaw =
+      status === "lost" && idxStatus2 >= 0 ? statusSecondary || statusPrimary : statusPrimary;
+
     rows.push({
       id: `${status}-${r + 1}`,
       status,
@@ -284,7 +290,7 @@ function parseSheet(sheet, status, reportingYear) {
       packageName: String(cell(row, idxPackage)).trim(),
       mrc: toNumber(cell(row, idxMrc)),
       type: String(cell(row, idxType)).trim(),
-      statusText: String(cell(row, idxStatus)).trim(),
+      statusText: normalizeOrderStatusText(statusTextRaw, status, String(stage).trim()),
       stage: String(stage).trim(),
       revenue:
         status === "applied" || status === "lost"

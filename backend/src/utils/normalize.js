@@ -122,3 +122,25 @@ export function toMonth(value) {
 export function normalizeType(value) {
   return normalizeKey(value);
 }
+
+export function isGarbageStatusLabel(value) {
+  const s = collapseWhitespace(value);
+  if (!s || s === "**") return true;
+  if (/^\d{10,}$/.test(s.replace(/\s/g, ""))) return true;
+  return false;
+}
+
+export function defaultStatusLabel(sheetStatus) {
+  if (sheetStatus === "applied") return "Applied";
+  if (sheetStatus === "underActivation") return "Pending";
+  if (sheetStatus === "lost") return "Lost";
+  return "";
+}
+
+export function normalizeOrderStatusText(raw, sheetStatus, fallback = "") {
+  const s = collapseWhitespace(raw);
+  if (!isGarbageStatusLabel(s)) return s || fallback || defaultStatusLabel(sheetStatus);
+  const fb = collapseWhitespace(fallback);
+  if (!isGarbageStatusLabel(fb)) return fb || defaultStatusLabel(sheetStatus);
+  return defaultStatusLabel(sheetStatus);
+}

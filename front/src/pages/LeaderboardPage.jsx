@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { api } from '../api/client.js';
 import { useApp } from '../context/AppContext.jsx';
 import { t } from '../i18n/index.js';
+import LeaderboardBars from '../components/LeaderboardBars.jsx';
 
 export default function LeaderboardPage() {
   const { lang, user, metadata } = useApp();
@@ -19,6 +19,7 @@ export default function LeaderboardPage() {
   const fmt = (n) => new Intl.NumberFormat(lang === 'ar' ? 'ar-SA' : 'en-US').format(n);
   const top3 = data.entries.slice(0, 3);
   const rest = data.entries.slice(0, 10);
+  const chartTitle = data.showRevenue ? t(lang, 'appliedRevenue') : t(lang, 'appliedOrders');
 
   return (
     <>
@@ -78,15 +79,14 @@ export default function LeaderboardPage() {
           </tbody>
         </table>
       </div>
-      <div className="card" style={{ height: 280 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rest} layout="vertical">
-            <XAxis type="number" hide />
-            <YAxis type="category" dataKey="name" width={120} />
-            <Tooltip />
-            <Bar dataKey={data.showRevenue ? 'revenue' : 'completed'} fill="var(--chart-3)" radius={[0, 8, 8, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="card leaderboard-chart-card">
+        <h3 className="leaderboard-chart-title">{chartTitle}</h3>
+        <LeaderboardBars
+          entries={rest}
+          showRevenue={data.showRevenue}
+          formatValue={fmt}
+          highlightPersonId={user?.personId}
+        />
       </div>
     </>
   );
