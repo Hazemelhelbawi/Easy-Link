@@ -272,7 +272,9 @@ function parseSheet(sheet, status, reportingYear) {
     const statusPrimary = cell(row, idxStatus);
     const statusSecondary = idxStatus2 >= 0 ? cell(row, idxStatus2) : "";
     const statusTextRaw =
-      status === "lost" && idxStatus2 >= 0 ? statusSecondary || statusPrimary : statusPrimary;
+      status === "lost" && idxStatus2 >= 0
+        ? statusSecondary || statusPrimary
+        : statusPrimary;
 
     rows.push({
       id: `${status}-${r + 1}`,
@@ -290,12 +292,18 @@ function parseSheet(sheet, status, reportingYear) {
       packageName: String(cell(row, idxPackage)).trim(),
       mrc: toNumber(cell(row, idxMrc)),
       type: String(cell(row, idxType)).trim(),
-      statusText: normalizeOrderStatusText(statusTextRaw, status, String(stage).trim()),
+      statusText: normalizeOrderStatusText(
+        statusTextRaw,
+        status,
+        String(stage).trim(),
+      ),
       stage: String(stage).trim(),
       revenue:
-        status === "applied" || status === "lost"
-          ? toNumber(cell(row, idxRevenue))
-          : 0,
+        status === "applied"
+          ? toNumber(cell(row, idxMrc))
+          : status === "lost"
+            ? toNumber(cell(row, idxRevenue))
+            : 0,
       month: rowMonthValue(row, idxMonth),
       reportingYear,
     });
