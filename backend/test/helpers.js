@@ -26,6 +26,7 @@ export async function writeFixtureWorkbook(filePath) {
     'Status',
     'Revenue',
     'month',
+    'SFA',
   ];
   const applied = [
     headers,
@@ -43,6 +44,7 @@ export async function writeFixtureWorkbook(filePath) {
       'Done',
       '500',
       '1',
+      '191575',
     ],
     [
       'Ehab Hassan 2',
@@ -58,6 +60,7 @@ export async function writeFixtureWorkbook(filePath) {
       'Done',
       '300',
       '1',
+      '191575.0',
     ],
     [
       'Mahmoud El-sheikh',
@@ -73,6 +76,7 @@ export async function writeFixtureWorkbook(filePath) {
       'Done',
       '700',
       '2',
+      '42',
     ],
     [
       'Unknown Person',
@@ -88,6 +92,7 @@ export async function writeFixtureWorkbook(filePath) {
       'Done',
       '100',
       '2',
+      '42',
     ],
   ];
   const under = [
@@ -106,6 +111,7 @@ export async function writeFixtureWorkbook(filePath) {
       'Pending',
       '0',
       '2',
+      '99',
     ],
   ];
   const underHeaders = [...headers, 'Pending with ...'];
@@ -127,9 +133,9 @@ export async function writeFixtureWorkbook(filePath) {
       '40',
       'Mobile',
       'Rejected',
-      'Lost Stage',
       '0',
       '2',
+      '77',
       'Cancelled',
     ],
   ];

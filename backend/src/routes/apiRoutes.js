@@ -8,6 +8,7 @@ import {
   leaderboardEligiblePeople,
 } from '../services/permissions.js';
 import { applyOrderQueryFilters, collectOrderFilterOptions } from '../services/orderFilters.js';
+import XLSX from 'xlsx';
 import {
   aggregateOverview,
   aggregateOverviewForMonth,
@@ -22,16 +23,46 @@ import {
   buildLeaderboard,
   teamBreakdown,
   lostMetricsForMonth,
-  pendingMetricsForMonth,
+  pendingMetricsOpen,
+  sfaMetricsForRows,
 } from '../services/metrics.js';
 import { buildTargetVsActual } from '../services/targetsService.js';
+
+const SFA_STATUSES = new Set(['applied', 'underActivation', 'lost']);
+const SFA_EXPORT_SCOPES = new Set(['applied', 'underActivation', 'lost', 'month', 'system']);
+
+function overviewMonthScopedRows(visible, selectedMonth, reportingYear) {
+  return selectedMonth != null
+    ? filterRowsByMonth(visible, selectedMonth, reportingYear)
+    : visible;
+}
+
+function sfaRowsForStatus(monthScoped, status) {
+  if (!SFA_STATUSES.has(status)) return [];
+  return monthScoped.filter((r) => r.status === status);
+}
+
+function sfaRowsForScope(visible, monthScoped, status, { monthFilter } = {}) {
+  if (status === 'system') return visible;
+  if (status === 'month') return monthScoped;
+  // Under Activation is an open backlog: only apply month when explicitly chosen.
+  if (status === 'underActivation') {
+    if (monthFilter && monthFilter !== 'all') {
+      return sfaRowsForStatus(monthScoped, status);
+    }
+    return visible.filter((r) => r.status === 'underActivation');
+  }
+  return sfaRowsForStatus(monthScoped, status);
+}
 
 const router = Router();
 router.use(attachAuth, requireAuth, requirePasswordChanged);
 
 router.get('/metadata', async (req, res) => {
   const config = await loadConfig();
+  const people = await loadPeople();
   const cache = getReportCache();
+  const visible = filterVisibleRows(req.auth.user, req.auth.role, people, cache.rows);
   return res.json({
     ok: true,
     data: {
@@ -45,6 +76,7 @@ router.get('/metadata', async (req, res) => {
       reportStatus: cache.reportMeta?.reportStatus || null,
       uploadFileName: cache.reportMeta?.fileName || null,
       rowCounts: cache.rowCounts,
+      sfaTotal: sfaMetricsForRows(visible).unique,
       availableMonths: getAvailableMonths(
         cache.rows.filter((r) => r.status === 'applied'),
         config.reportingYear,
@@ -82,13 +114,8 @@ router.get('/overview', async (req, res) => {
     revenue: monthMap.get(m)?.revenue || 0,
     completed: monthMap.get(m)?.completed || 0,
   }));
-  const monthScoped =
-    selectedMonth != null ? filterRowsByMonth(visible, selectedMonth, config.reportingYear) : visible;
-  const pending = pendingByStage(monthScoped);
-  const pendingSummary =
-    selectedMonth != null
-      ? pendingMetricsForMonth(visible, selectedMonth, config.reportingYear)
-      : { total: visible.filter((r) => r.status === 'underActivation').length, byStage: pending };
+  const monthScoped = overviewMonthScopedRows(visible, selectedMonth, config.reportingYear);
+  const pendingSummary = pendingMetricsOpen(visible);
   const lostSummary =
     selectedMonth != null
       ? lostMetricsForMonth(visible, selectedMonth, config.reportingYear)
@@ -96,6 +123,14 @@ router.get('/overview', async (req, res) => {
           count: visible.filter((r) => r.status === 'lost').length,
           revenue: visible.filter((r) => r.status === 'lost').reduce((s, r) => s + (r.revenue || 0), 0),
         };
+  const underActivationRows = visible.filter((r) => r.status === 'underActivation');
+  const sfaSummary = {
+    applied: sfaMetricsForRows(sfaRowsForStatus(monthScoped, 'applied')),
+    underActivation: sfaMetricsForRows(underActivationRows),
+    lost: sfaMetricsForRows(sfaRowsForStatus(monthScoped, 'lost')),
+    month: sfaMetricsForRows(monthScoped),
+    system: sfaMetricsForRows(visible),
+  };
   const targetsProgress =
     selectedMonth != null
       ? await buildTargetVsActual({
@@ -135,9 +170,10 @@ router.get('/overview', async (req, res) => {
       comparison: cmp,
       revenueSeries,
       monthStatusBreakdown,
-      pendingByStage: pending,
+      pendingByStage: pendingSummary.byStage,
       pendingSummary,
       lostSummary,
+      sfaSummary,
       report: {
         reportNumber: cache.reportMeta?.reportNumber || null,
         reportStatus: cache.reportMeta?.reportStatus || 'active',
@@ -148,6 +184,62 @@ router.get('/overview', async (req, res) => {
       teamPerformance,
     },
   });
+});
+
+router.get('/overview/sfa-export', async (req, res) => {
+  const status = String(req.query.status || '');
+  if (!SFA_EXPORT_SCOPES.has(status)) {
+    return res.status(400).json({ ok: false, error: 'INVALID_STATUS' });
+  }
+  const config = await loadConfig();
+  const people = await loadPeople();
+  const cache = getReportCache();
+  const visible = filterVisibleRows(req.auth.user, req.auth.role, people, cache.rows);
+  const monthParam = req.query.month ? String(req.query.month) : 'all';
+  const applied = visible.filter((r) => r.status === 'applied');
+  const latest = getLatestReportingMonth(applied, config.reportingYear);
+  const selectedMonth =
+    monthParam === 'all'
+      ? latest
+      : Number.isFinite(Number(monthParam))
+        ? Number(monthParam)
+        : latest;
+  const monthScoped = overviewMonthScopedRows(visible, selectedMonth, config.reportingYear);
+  // Under Activation export defaults to all open; honor month only when query asks for it.
+  const underMonthFilter =
+    status === 'underActivation' && monthParam && monthParam !== 'all' ? monthParam : null;
+  const metrics = sfaMetricsForRows(
+    sfaRowsForScope(visible, monthScoped, status, {
+      monthFilter:
+        status === 'underActivation'
+          ? underMonthFilter
+          : selectedMonth != null
+            ? String(selectedMonth)
+            : 'all',
+    }),
+  );
+  const sheetRows = [
+    ['SFA', 'Orders', 'Applied', 'Under Activation', 'Lost'],
+    ...metrics.rows.map((r) => [r.sfa, r.orders, r.applied, r.underActivation, r.lost]),
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetRows), 'SFA');
+  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  const monthPart =
+    status === 'underActivation' && !underMonthFilter
+      ? 'all-open'
+      : selectedMonth != null
+        ? `m${selectedMonth}`
+        : 'all';
+  res.setHeader(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  );
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="sfa-${status}-${monthPart}.xlsx"`,
+  );
+  return res.send(Buffer.from(buffer));
 });
 
 router.get('/targets/progress', async (req, res) => {

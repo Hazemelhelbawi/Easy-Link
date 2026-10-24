@@ -7,6 +7,7 @@ import {
   toMonth,
   normalizeKey,
   normalizeOrderStatusText,
+  normalizeSfa,
 } from "../utils/normalize.js";
 
 const REQUIRED_SHEETS = [
@@ -252,6 +253,7 @@ function parseSheet(sheet, status, reportingYear) {
     "customer mobile",
     "contact number",
   );
+  const idxSfa = colIndex(normalized, "sfa", "sfa id", "sfa id ");
 
   /** @type {import('./reportCache.js').OrderRow[]} */
   const rows = [];
@@ -292,6 +294,7 @@ function parseSheet(sheet, status, reportingYear) {
       packageName: String(cell(row, idxPackage)).trim(),
       mrc: toNumber(cell(row, idxMrc)),
       type: String(cell(row, idxType)).trim(),
+      sfa: normalizeSfa(cell(row, idxSfa)),
       statusText: normalizeOrderStatusText(
         statusTextRaw,
         status,

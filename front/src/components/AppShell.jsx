@@ -3,6 +3,7 @@ import { LayoutDashboard, Trophy, Target, Users, ClipboardList, Settings, LogOut
 import { useApp } from '../context/AppContext.jsx';
 import { t } from '../i18n/index.js';
 import { api } from '../api/client.js';
+import { formatNumber } from '../utils/format.js';
 import ThemeLangToggle from './ThemeLangToggle.jsx';
 import '../styles/app.css';
 
@@ -16,6 +17,7 @@ export default function AppShell() {
   }
 
   const appName = metadata?.applicationName || t(lang, 'appName');
+  const sfaTotal = metadata?.sfaTotal;
 
   return (
     <div className="app-shell">
@@ -50,9 +52,17 @@ export default function AppShell() {
       </aside>
       <div className="main-area">
         <header className="topbar">
-          <div>
-            <strong>{user?.username}</strong>{' '}
-            <span style={{ color: 'var(--text-muted)' }}>{t(lang, `roles.${role}`)}</span>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div>
+              <strong>{user?.username}</strong>{' '}
+              <span style={{ color: 'var(--text-muted)' }}>{t(lang, `roles.${role}`)}</span>
+            </div>
+            {sfaTotal != null ? (
+              <span className="topbar-sfa" title={t(lang, 'sfaTotalSystem')}>
+                {t(lang, 'sfaLabel')}
+                <strong dir="ltr">{formatNumber(lang, sfaTotal)}</strong>
+              </span>
+            ) : null}
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <ThemeLangToggle />

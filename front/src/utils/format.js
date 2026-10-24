@@ -1,8 +1,17 @@
+import { t } from '../i18n/index.js';
+
 export function formatNumber(lang, value) {
   const n = Number(value) || 0;
   return new Intl.NumberFormat(lang === 'ar' ? 'ar-SA' : 'en-US', {
     maximumFractionDigits: 2,
   }).format(n);
+}
+
+/** Localized unique-SFA label, e.g. "2 SFAs" / "2 SFA". */
+export function formatSfaCount(lang, value) {
+  const n = Number(value) || 0;
+  if (n === 1) return t(lang, 'sfaCountOne');
+  return t(lang, 'sfaCount', { n: formatNumber(lang, n) });
 }
 
 /** Short axis labels (e.g. 200K). Always LTR digits so RTL UI does not flip "800K" into unreadable order. */

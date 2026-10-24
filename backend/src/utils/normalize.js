@@ -22,6 +22,19 @@ export function msisdnToText(value) {
   return s;
 }
 
+/** Clean SFA for distinct counting: string, trim, drop float ".0"; empty/NaN → "". */
+export function normalizeSfa(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return "";
+    return String(Math.trunc(value));
+  }
+  let s = String(value).trim();
+  if (!s || /^nan$/i.test(s)) return "";
+  if (/\.0+$/.test(s)) s = s.replace(/\.0+$/, "");
+  return s.trim();
+}
+
 export function toNumber(value) {
   if (value === null || value === undefined || value === "") return 0;
   if (typeof value === "number" && Number.isFinite(value)) return value;

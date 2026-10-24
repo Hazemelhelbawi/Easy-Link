@@ -1,15 +1,26 @@
 {
-  "lastUploadAt": "2026-10-17T22:26:54.312Z",
+  "lastUploadAt": "2026-10-19T13:07:39.678Z",
   "rowCounts": {
-    "applied": 5912,
-    "underActivation": 720,
-    "lost": 1296
+    "applied": 5993,
+    "underActivation": 747,
+    "lost": 1297
   },
   "reportingYear": 2026,
-  "reportNumber": "2026-10-13",
+  "reportNumber": "2026-10-18",
   "reportStatus": "active",
-  "fileName": "Report 2026 10 13.xlsx",
+  "fileName": "Report 2026 10 18.xlsx",
   "uploadHistory": [
+    {
+      "at": "2026-10-19T13:07:39.678Z",
+      "fileName": "Report 2026 10 18.xlsx",
+      "reportNumber": "2026-10-18",
+      "rowCounts": {
+        "applied": 5993,
+        "underActivation": 747,
+        "lost": 1297
+      },
+      "action": "replace"
+    },
     {
       "at": "2026-10-17T22:26:54.312Z",
       "fileName": "Report 2026 10 13.xlsx",

@@ -1,4 +1,56 @@
-import { normalizeKey } from "../utils/normalize.js";
+import { normalizeKey, normalizeSfa } from "../utils/normalize.js";
+
+/**
+ * Distinct non-empty SFA values in a filtered row set (same filters as the KPI count).
+ * @param {Array<{ sfa?: string }>} rows
+ */
+export function countUniqueSfa(rows) {
+  if (!rows?.length) return 0;
+  const set = new Set();
+  for (const row of rows) {
+    const sfa = normalizeSfa(row?.sfa);
+    if (sfa) set.add(sfa);
+  }
+  return set.size;
+}
+
+/**
+ * One row per SFA with order counts, sorted by orders desc.
+ * Optional status breakdown columns for Applied / Under Activation / Lost.
+ * @param {Array<{ sfa?: string, status?: string }>} rows
+ */
+export function sfaBreakdown(rows) {
+  if (!rows?.length) return [];
+  /** @type {Map<string, { sfa: string, orders: number, applied: number, underActivation: number, lost: number }>} */
+  const map = new Map();
+  for (const row of rows) {
+    const sfa = normalizeSfa(row?.sfa);
+    if (!sfa) continue;
+    const cur = map.get(sfa) || {
+      sfa,
+      orders: 0,
+      applied: 0,
+      underActivation: 0,
+      lost: 0,
+    };
+    cur.orders += 1;
+    if (row.status === "applied") cur.applied += 1;
+    else if (row.status === "underActivation") cur.underActivation += 1;
+    else if (row.status === "lost") cur.lost += 1;
+    map.set(sfa, cur);
+  }
+  return [...map.values()].sort((a, b) => {
+    if (b.orders !== a.orders) return b.orders - a.orders;
+    return a.sfa.localeCompare(b.sfa, undefined, { numeric: true });
+  });
+}
+
+export function sfaMetricsForRows(rows) {
+  return {
+    unique: countUniqueSfa(rows),
+    rows: sfaBreakdown(rows),
+  };
+}
 
 export function getAvailableMonths(rows, reportingYear) {
   const months = new Set();
@@ -37,7 +89,18 @@ export function filterRowsByMonth(rows, month, reportingYear) {
 export function aggregateOverviewForMonth(allRows, month, reportingYear) {
   const scoped = filterRowsByMonth(allRows, month, reportingYear);
   const appliedRows = scoped.filter((r) => r.status === "applied");
-  return aggregateOverview(appliedRows, scoped);
+  // Under Activation stays open across months — never auto-scope to the selected month.
+  const underActivation = allRows.filter(
+    (r) => r.status === "underActivation",
+  ).length;
+  const lost = scoped.filter((r) => r.status === "lost").length;
+  const appliedRevenue = appliedRows.reduce((s, r) => s + (r.revenue || 0), 0);
+  return {
+    applied: appliedRows.length,
+    underActivation,
+    lost,
+    appliedRevenue,
+  };
 }
 
 export function appliedStatusBreakdown(appliedRows, month, reportingYear) {
@@ -111,15 +174,21 @@ export function lostMetricsForMonth(allRows, month, reportingYear) {
   };
 }
 
+/**
+ * Open Under Activation backlog. Month is optional — pass null/"all" to include every open request.
+ */
 export function pendingMetricsForMonth(allRows, month, reportingYear) {
-  const scoped = filterRowsByMonth(
-    allRows.filter((r) => r.status === "underActivation"),
-    month,
-    reportingYear,
-  );
+  let scoped = allRows.filter((r) => r.status === "underActivation");
+  if (month && month !== "all") {
+    scoped = filterRowsByMonth(scoped, month, reportingYear);
+  }
   const total = scoped.length;
   const byStage = pendingByStage(scoped);
   return { total, byStage };
+}
+
+export function pendingMetricsOpen(allRows) {
+  return pendingMetricsForMonth(allRows, "all", null);
 }
 
 export function personPerformance(appliedRows, personId, reportingYear) {

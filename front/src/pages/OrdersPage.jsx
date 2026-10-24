@@ -37,7 +37,11 @@ export default function OrdersPage() {
   );
 
   const status = searchParams.get('status') || 'applied';
-  const month = searchParams.get('month') || String(defaultMonth || 'all');
+  const monthFromUrl = searchParams.get('month');
+  // Under Activation = open backlog: default to all months unless user picks one.
+  const month =
+    monthFromUrl ||
+    (status === 'underActivation' ? 'all' : String(defaultMonth || 'all'));
   const company = searchParams.get('company') || '';
   const person = searchParams.get('person') || '';
   const search = searchParams.get('search') || '';
@@ -57,10 +61,13 @@ export default function OrdersPage() {
   }
 
   useEffect(() => {
+    // Applied / Lost: auto-select reporting month when none is set.
+    // Under Activation: leave month unset so "all open" is shown.
+    if (status === 'underActivation') return;
     if (!searchParams.get('month') && defaultMonth) {
       patchParams({ month: defaultMonth });
     }
-  }, [defaultMonth]);
+  }, [defaultMonth, status]);
 
   useEffect(() => {
     setLoading(true);

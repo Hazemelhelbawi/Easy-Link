@@ -85,6 +85,20 @@ const messages = {
     pendingBreakdown: 'تفصيل المعلّق',
     pendingBreakdownHint: 'المراحل من تقرير «تحت التنفيذ» للشهر المحدّد — اضغط على العمود لفتح الطلبات.',
     viewOrders: 'عرض الطلبات',
+    viewSfas: 'عرض حسابات SFA',
+    downloadExcel: 'تنزيل Excel',
+    sortedByOrders: 'مرتّب بعدد الطلبات',
+    colOrders: 'عدد الطلبات',
+    colSfa: 'SFA',
+    sfaLabel: 'SFA',
+    sfaCount: '{n} SFA',
+    sfaCountOne: 'SFA واحد',
+    sfaTotalMonth: 'SFA للشهر',
+    sfaTotalSystem: 'إجمالي SFA في النظام',
+    sfaMonthScope: 'كل حالات الشهر',
+    sfaSystemScope: 'كل التقرير',
+    sfaBreakdownTitle: 'تفصيل SFA',
+    sfaChipHint: 'اضغط لعرض التفاصيل',
     lostRevenueMonth: 'إيراد المفقود (الشهر)',
     targetsProgress: 'الهدف مقابل الإنجاز',
     emptyPendingChart: 'لا توجد طلبات تحت التنفيذ لهذا الشهر',
@@ -206,6 +220,20 @@ const messages = {
     pendingBreakdown: 'Pending breakdown',
     pendingBreakdownHint: 'Stages from Under Activation for the selected month — click a bar to filter orders.',
     viewOrders: 'View orders',
+    viewSfas: 'View SFAs',
+    downloadExcel: 'Download Excel',
+    sortedByOrders: 'Sorted by order count',
+    colOrders: 'Orders',
+    colSfa: 'SFA',
+    sfaLabel: 'SFA',
+    sfaCount: '{n} SFAs',
+    sfaCountOne: '1 SFA',
+    sfaTotalMonth: 'SFAs this month',
+    sfaTotalSystem: 'Total SFAs in system',
+    sfaMonthScope: 'All statuses this month',
+    sfaSystemScope: 'Entire report',
+    sfaBreakdownTitle: 'SFA breakdown',
+    sfaChipHint: 'Click to view details',
     lostRevenueMonth: 'Lost revenue (month)',
     targetsProgress: 'Target vs actual',
     emptyPendingChart: 'No under-activation orders for this month',
@@ -243,13 +271,19 @@ const messages = {
   },
 };
 
-export function t(lang, key) {
+export function t(lang, key, vars) {
   const parts = key.split('.');
   let cur = messages[lang] || messages.ar;
   for (const p of parts) cur = cur?.[p];
-  return cur ?? key;
+  let out = cur ?? key;
+  if (vars && typeof out === 'string') {
+    out = out.replace(/\{(\w+)\}/g, (_, name) =>
+      vars[name] != null ? String(vars[name]) : `{${name}}`,
+    );
+  }
+  return out;
 }
 
 export function useI18n(lang) {
-  return (key) => t(lang, key);
+  return (key, vars) => t(lang, key, vars);
 }

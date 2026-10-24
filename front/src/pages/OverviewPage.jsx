@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, CheckCircle2, Clock3, XCircle } from 'lucide-react';
+import { BarChart3, CheckCircle2, Clock3, Hash, Layers, XCircle } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -13,13 +13,22 @@ import { api } from '../api/client.js';
 import { useApp } from '../context/AppContext.jsx';
 import { t } from '../i18n/index.js';
 import StatCard from '../components/StatCard.jsx';
+import SfaBreakdownModal from '../components/SfaBreakdownModal.jsx';
 import ReportMetaBanner from '../components/ReportMetaBanner.jsx';
 import PendingBreakdown from '../components/PendingBreakdown.jsx';
 import AppliedStatusBreakdown from '../components/AppliedStatusBreakdown.jsx';
 import { chartValueAxisMargin, chartValueYAxisProps, rechartsTooltipProps } from '../components/rechartsTheme.jsx';
 import { OverviewSkeleton } from '../components/Skeleton.jsx';
 import { defaultReportingMonth } from '../utils/monthDefaults.js';
-import { formatChartAxisNumber, formatCurrency, formatNumber } from '../utils/format.js';
+import { formatChartAxisNumber, formatCurrency, formatNumber, formatSfaCount } from '../utils/format.js';
+
+const SFA_SCOPE_LABEL = {
+  applied: 'appliedOrders',
+  underActivation: 'underActivationOrders',
+  lost: 'lostOrders',
+  month: 'sfaMonthScope',
+  system: 'sfaSystemScope',
+};
 
 export default function OverviewPage() {
   const { lang, metadata, role } = useApp();
@@ -31,6 +40,8 @@ export default function OverviewPage() {
   const activeMonth = month ?? defaultMonth;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sfaModalStatus, setSfaModalStatus] = useState(null);
+  const [sfaDownloading, setSfaDownloading] = useState(false);
 
   useEffect(() => {
     if (month === null && defaultMonth) setMonth(defaultMonth);
@@ -82,6 +93,36 @@ export default function OverviewPage() {
     return `/orders?${q}`;
   };
 
+  const sfaUnique = (status) => data?.sfaSummary?.[status]?.unique ?? 0;
+  const sfaRows = sfaModalStatus ? data?.sfaSummary?.[sfaModalStatus]?.rows || [] : [];
+  const sfaModalTitle = sfaModalStatus
+    ? `${t(lang, 'sfaBreakdownTitle')} — ${t(lang, SFA_SCOPE_LABEL[sfaModalStatus])}${
+        sfaModalStatus === 'system' ? '' : ` · ${monthLabel}`
+      }`
+    : '';
+
+  async function downloadSfaExcel() {
+    if (!sfaModalStatus) return;
+    setSfaDownloading(true);
+    try {
+      const q = new URLSearchParams({ status: sfaModalStatus });
+      if (activeMonth != null && sfaModalStatus !== 'system') {
+        q.set('month', String(activeMonth));
+      }
+      const res = await fetch(`/api/overview/sfa-export?${q}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sfa-${sfaModalStatus}${activeMonth != null ? `-m${activeMonth}` : ''}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setSfaDownloading(false);
+    }
+  }
+
   return (
     <>
       <div className="overview-header">
@@ -110,6 +151,41 @@ export default function OverviewPage() {
         <section className="overview-snapshot">
           {data.report ? <ReportMetaBanner report={data.report} lang={lang} /> : null}
 
+          <div className="sfa-totals-bar" role="group" aria-label={t(lang, 'sfaLabel')}>
+            <button
+              type="button"
+              className="sfa-total-chip"
+              onClick={() => setSfaModalStatus('month')}
+              title={t(lang, 'sfaChipHint')}
+            >
+              <span className="sfa-total-chip-icon">
+                <Hash size={18} strokeWidth={2.2} />
+              </span>
+              <span className="sfa-total-chip-body">
+                <span className="sfa-total-chip-label">{t(lang, 'sfaTotalMonth')}</span>
+                <span className="sfa-total-chip-value" dir="ltr">
+                  {formatSfaCount(lang, sfaUnique('month'))}
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="sfa-total-chip"
+              onClick={() => setSfaModalStatus('system')}
+              title={t(lang, 'sfaChipHint')}
+            >
+              <span className="sfa-total-chip-icon">
+                <Layers size={18} strokeWidth={2.2} />
+              </span>
+              <span className="sfa-total-chip-body">
+                <span className="sfa-total-chip-label">{t(lang, 'sfaTotalSystem')}</span>
+                <span className="sfa-total-chip-value" dir="ltr">
+                  {formatSfaCount(lang, sfaUnique('system'))}
+                </span>
+              </span>
+            </button>
+          </div>
+
           <div className="overview-kpi-grid">
             <StatCard
               lang={lang}
@@ -121,6 +197,8 @@ export default function OverviewPage() {
               trend={data.comparison.orderGrowth}
               hint={t(lang, 'vsPrevMonth')}
               spark={monthSpark.orders}
+              sfaCount={sfaUnique('applied')}
+              onViewSfas={() => setSfaModalStatus('applied')}
             />
             <StatCard
               lang={lang}
@@ -129,6 +207,8 @@ export default function OverviewPage() {
               value={formatNumber(lang, data.summary.underActivation)}
               icon={Clock3}
               to={ordersLink({ status: 'underActivation' })}
+              sfaCount={sfaUnique('underActivation')}
+              onViewSfas={() => setSfaModalStatus('underActivation')}
               footnote={
                 pipeline
                   ? `${((pipeline.pending / pipeline.total) * 100).toFixed(0)}% ${t(lang, 'pipelineShare')}`
@@ -142,6 +222,8 @@ export default function OverviewPage() {
               value={formatNumber(lang, data.lostSummary?.count || 0)}
               icon={XCircle}
               to={ordersLink({ status: 'lost' })}
+              sfaCount={sfaUnique('lost')}
+              onViewSfas={() => setSfaModalStatus('lost')}
               footnote={
                 data.lostSummary?.revenue
                   ? `${t(lang, 'lostRevenueMonth')}: ${formatCurrency(lang, data.lostSummary.revenue, metadata)}`
@@ -236,6 +318,16 @@ export default function OverviewPage() {
           ))}
         </div>
       ) : null}
+
+      <SfaBreakdownModal
+        open={Boolean(sfaModalStatus)}
+        lang={lang}
+        title={sfaModalTitle}
+        rows={sfaRows}
+        onClose={() => setSfaModalStatus(null)}
+        onDownload={downloadSfaExcel}
+        downloading={sfaDownloading}
+      />
 
       {data ? (
         <div className="grid-2">

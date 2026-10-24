@@ -25,6 +25,7 @@ import { buildOrderIndexes } from './orderFilters.js';
  * @property {string} packageName
  * @property {number} mrc
  * @property {string} type
+ * @property {string} sfa
  * @property {string} statusText
  * @property {string} stage
  * @property {number} revenue

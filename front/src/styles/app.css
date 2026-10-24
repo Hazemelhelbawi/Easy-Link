@@ -303,6 +303,137 @@
   line-height: 1.15;
 }
 
+.stat-sfa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--stat-accent, var(--border)) 28%, var(--border));
+  background: color-mix(in srgb, var(--stat-accent, var(--chart-1)) 10%, var(--surface));
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.stat-sfa-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--stat-accent, var(--accent));
+}
+
+.stat-sfa-chip-cta {
+  color: var(--stat-accent, var(--accent));
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+button.stat-sfa-chip.is-action {
+  cursor: pointer;
+  font: inherit;
+  text-align: start;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+button.stat-sfa-chip.is-action:hover {
+  border-color: color-mix(in srgb, var(--stat-accent, var(--accent)) 55%, var(--border));
+  background: color-mix(in srgb, var(--stat-accent, var(--accent)) 16%, var(--surface));
+  color: var(--text);
+}
+
+.stat-value-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.stat-value-link:hover .stat-value {
+  color: var(--stat-accent, var(--accent));
+}
+
+.sfa-totals-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.sfa-total-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: start;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.sfa-total-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.sfa-total-chip-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.sfa-total-chip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sfa-total-chip-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.sfa-total-chip-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.topbar-sfa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.topbar-sfa strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
 .overview-snapshot {
   display: flex;
   flex-direction: column;
@@ -852,6 +983,25 @@ table.data-table td {
   border-radius: var(--radius-md);
   padding: var(--space-5);
   box-shadow: var(--shadow-md);
+}
+
+.modal-card-wide {
+  width: min(720px, 100%);
+  max-height: min(88vh, 900px);
+  display: flex;
+  flex-direction: column;
+}
+
+.sfa-modal-sub {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.sfa-table-wrap {
+  margin-top: 4px;
+  max-height: min(52vh, 480px);
+  overflow: auto;
 }
 
 .modal-header {
